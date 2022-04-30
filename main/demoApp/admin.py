@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 
 from .models import (Post, Category, Comment,
                      User, Product, Tag, Sharing,
-                     Report, Notification, ProductPostDetail, Auction)
+                     Report, Notification, Auction)
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
 
@@ -34,12 +34,19 @@ class PostAdmin(admin.ModelAdmin):
     inlines = (PostTagInlineAdmin,)
     forms = PostForm
 
-    list_display = ['id', 'description', 'created_date', 'updated_date', 'author']
-    list_filter = ['author', 'created_date']
+    list_display = ['id', 'title', 'description', 'created_date', 'updated_date', 'author']
+    list_filter = ['author', 'title', 'created_date']
 
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'created_date', 'updated_date', 'image', 'category']
+    readonly_fields = ['show_image']
+
+    def show_image(self, product):
+        if product:
+            return mark_safe(
+                "<img src='/static/{0}' alt='{1}' width='200px'/>".format(product.image.name, product.name)
+            )
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -76,10 +83,6 @@ class NotificationAdmin(admin.ModelAdmin):
 #     list_display = ['id', 'description', 'user']
 
 
-class ProductPostDetailAdmin(admin.ModelAdmin):
-    list_display = ['id', 'created_date', 'updated_date', 'post', 'product']
-
-
 class AuctionPostAdmin(admin.ModelAdmin):
     list_display = ['id', 'price', 'created_date', 'updated_date', 'user', 'post']
 
@@ -94,4 +97,3 @@ admin.site.register(Sharing, ShareAdmin)
 admin.site.register(Notification, NotificationAdmin)
 # admin.site.register(Report, ReportAdmin)
 admin.site.register(Auction, AuctionPostAdmin)
-admin.site.register(ProductPostDetail, ProductPostDetailAdmin)
