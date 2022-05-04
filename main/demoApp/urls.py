@@ -1,10 +1,13 @@
-from rest_framework.routers import DefaultRouter
+
 from django.urls import path, include
 from . import views
+from rest_framework import routers
 
-router = DefaultRouter()
+router = routers.DefaultRouter()
+router.register("post", views.PostViewSet, basename="post")
+router.register("product", views.ProductViewSet, basename="product")
 
 urlpatterns = [
-    path('', views.index, name="index"),
+    path('', include(router.urls)),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]
