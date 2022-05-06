@@ -22,7 +22,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatar/%Y/%m', null=False)
     phone_number = models.CharField(max_length=20, null=False, blank=True, unique=True)
     address = models.CharField(max_length=255)
-    date_of_birth = models.DateTimeField(null=False, auto_now_add=True)
+    date_of_birth = models.DateTimeField(null=True, blank=True)
     gender = models.PositiveIntegerField(choices=genders, default=male)
     friends = models.ManyToManyField('User', blank=True)
 
@@ -40,11 +40,11 @@ class Post(BaseModel):
     title = models.CharField(max_length=50, blank=False, null=False)
     description = RichTextField(blank=True)
     tags = models.ManyToManyField('Tag', blank=True)
-    creators = models.ManyToManyField(User, through='Comment', related_name='users_comment_post')
-    shared = models.ManyToManyField(User, through='Sharing', related_name='users_share_post')
+    creators_comment = models.ManyToManyField(User, through='Comment', related_name='users_comment_post')
+    people_shared = models.ManyToManyField(User, through='Sharing', related_name='users_share_post')
     auctioneers = models.ManyToManyField(User, through='Auction', related_name='auctioneers_post')
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    products = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return self.title
@@ -60,7 +60,7 @@ class Tag(BaseModel):
 class Comment(BaseModel):
     content = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
 
     def __str__(self):
         return self.content
@@ -70,13 +70,13 @@ class Sharing(BaseModel):
     description = RichTextField()
     tags = models.ManyToManyField(Tag, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='sharing')
 
 
 class Auction(BaseModel):
     price = models.IntegerField(null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='auction')
 
 
 # Product&Cate
@@ -109,6 +109,25 @@ class Notification(models.Model):
 class Report(models.Model):
     content = models.CharField(max_length=255, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # post = models.ForeignKey(Post, on_delete=models.CASCADE,
+    #                          related_name='reports', blank=True)
 
     def __str__(self):
         return self.content
+
+
+class ActionBase(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+
+class Action(ActionBase):
+    like, unlike = range(2)
+    # 0 = Like , 1 = UnLike
+    action = [(like, 'Like'), (unlike, 'Unlike')]
+    type = models.PositiveIntegerField(choices=action, default=unlike)

@@ -1,27 +1,46 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
-from .models import Post, Product, Tag
+from .models import (Post, Product, Tag,
+                     Action, Comment, User,
+                     Auction, Sharing)
+
+
+class UserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "username", "password",
+                  "email", "phone_number", "address", "date_of_birth",
+                  "date_joined", "gender", "avatar"]
+        extra_kwargs = {
+            'password': {'write_only': 'true'}
+        }
+
+    def create(self, validated_data):
+        user = User(**validated_data)
+        user = user.set_password(user.password)
+        user.save()
+
+        return user
 
 
 class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
-        fields = "__all__"
+        fields = ["id", "name"]
+
+
+class CommentSerializer(ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'created_date']
 
 
 class PostSerializer(ModelSerializer):
-    class Meta:
-        model = Post
-        fields = ["id", "created_date", "updated_date", "title",
-                  "description", "author"]
-
-
-class PostDetailSerializer(PostSerializer):
     tags = TagSerializer(many=True)
 
     class Meta:
-        model = PostSerializer.Meta.model
-        fields = PostSerializer.Meta.fields + \
-                ["products", "tags", "creators", "shared", "auctioneers"]
+        model = Post
+        fields = ["id", "created_date", "updated_date", "title",
+                  "description", "author", "tags"]
 
 
 class ProductSerializer(ModelSerializer):
@@ -39,3 +58,32 @@ class ProductSerializer(ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'image', 'category']
+
+
+class PostDetailSerializer(PostSerializer):
+    tags = TagSerializer(many=True)
+
+    class Meta:
+        model = PostSerializer.Meta.model
+        fields = PostSerializer.Meta.fields + \
+                 ["product", "creators_comment", "people_shared", "auctioneers"]
+
+
+class ActionSerializer(ModelSerializer):
+    class Meta:
+        model = Action
+        fields = ['id', 'type', 'created_date']
+
+
+class AuctionSerializer(ModelSerializer):
+    class Meta:
+        model = Auction
+        fields = ['id', 'price', 'user', 'post', 'created_date']
+
+
+class SharingSerializer(ModelSerializer):
+    tags = TagSerializer(many=True)
+
+    class Meta:
+        model = Sharing
+        fields = ['id', 'description', 'user', 'post', 'tags']

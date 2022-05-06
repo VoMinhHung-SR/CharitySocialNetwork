@@ -106,6 +106,11 @@ DATABASES = {
         'HOST': '',
     }
 }
+# Oauth2
+OAUTH2_INFO = {
+    "client_id": "3c26Jqvb0ITvWsB3ihurVJ7s4WkIyQRMdTCUM3vX",
+    "client_secret": "0QnCAsSjEN1EIzwSMBz6PYAPlcWBogwNDBFOr4lrinwjPQ00GNnMxkpy1W79LKOWsKiZJOo0IdPYiM9HgEXKQamZASJT38EzkmLb2gHKxaVuyBiyktHLNgtfilEQeexz"
+}
 # Model thuoc tinh
 STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'demoApp.User'
@@ -146,7 +151,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

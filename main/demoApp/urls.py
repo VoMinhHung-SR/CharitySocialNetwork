@@ -4,10 +4,12 @@ from . import views
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register("post", views.PostViewSet, basename="post")
-router.register("product", views.ProductViewSet, basename="product")
-
+router.register("posts", views.PostViewSet, basename="post")
+router.register("products", views.ProductViewSet, basename="product")
+router.register("users", views.UserViewSet, basename="user")
+router.register("comments", views.CommentViewSet, basename="comment")
 urlpatterns = [
     path('', include(router.urls)),
+    path('oauth2-info/', views.AuthInfo.as_view()),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]
