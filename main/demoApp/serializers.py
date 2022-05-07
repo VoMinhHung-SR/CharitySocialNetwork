@@ -1,8 +1,8 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import (Post, Product, Tag,
                      Action, Comment, User,
-                     Auction, Sharing)
-
+                     Auction, Sharing, Notification)
+from rest_framework import serializers
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -20,6 +20,15 @@ class UserSerializer(ModelSerializer):
         user.save()
 
         return user
+
+    avatar = serializers.SerializerMethodField(source='avatar')
+
+    def get_avatar(self, obj):
+        request = self.context['request']
+        if obj.avatar and not obj.avatar.name.startswith("/static"):
+            path = '/static/%s' % obj.avatar.name
+
+            return request.build_absolute_uri(path)
 
 
 class TagSerializer(ModelSerializer):
@@ -87,3 +96,15 @@ class SharingSerializer(ModelSerializer):
     class Meta:
         model = Sharing
         fields = ['id', 'description', 'user', 'post', 'tags']
+
+
+class NotificationSerializer(ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'message', 'created_date']
+
+
+class FriendSuggestSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'avatar']

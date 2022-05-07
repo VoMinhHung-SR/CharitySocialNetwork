@@ -1,0 +1,15 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<div style="width:100%;">
+    <h1 style="text-align:center">THỐNG KÊ SỐ BÀI VIẾT</h1>
+    <h4>Số lượng bài viết: <span style="color:red">{{count}}</span></h4>
+    <ul>
+        {% for s in stats %}
+        <li> {{ s.id }} . {{ s.title }}: {{ s.lesson_count }}</li>
+        <li> + Số lượt like của bài viết này là: {{s.post_like_count}}</li>
+        <li> + Số lượt bình luận của bài viết này là: {{s.post_comment_count}}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

@@ -2,11 +2,13 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import viewsets, generics
 from .models import (Post, Product, Tag, Action,
-                     Comment, User, Auction, Sharing)
+                     Comment, User, Auction, Sharing,
+                     Notification, FriendRequest)
 from .serializers import (PostSerializer, ProductSerializer,
                           PostDetailSerializer, ActionSerializer,
                           CommentSerializer, UserSerializer,
-                          AuctionSerializer, SharingSerializer)
+                          AuctionSerializer, SharingSerializer,
+                          NotificationSerializer, FriendSuggestSerializer)
 from .paginator import BasePagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,27 +17,80 @@ from rest_framework import permissions
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser
 from rest_framework.parsers import JSONParser
-from .perms import CommentOwnerPerms
+from .perms import (CommentOwnerPerms, PostOwnerPerms,
+                    OwnerProfilePerms)
 
 
 # Create your views here.
-class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
+                  generics.UpdateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
+    parser_classes = [JSONParser, MultiPartParser, ]
 
     def get_permissions(self):
-        if self.action in ['get_current_user']:
+        if self.action in ['get_current_user', 'get_notifications',
+                           'send_friend_request', 'accept-friend-request']:
             return [permissions.IsAuthenticated()]
+        if self.action in ['update', 'partial_update']:
+            return [OwnerProfilePerms()]
         return [permissions.AllowAny()]
 
     @action(methods=['get'], detail=False, url_path='current-user')
     def get_current_user(self, request):
         return Response(self.serializer_class(request.user).data)
 
-    # Chưa thử nghiệm
     @action(methods=['get'], detail=True, url_path='notifications')
     def get_notifications(self, request, pk):
-        pass
+        message = Notification.objects.filter(user=request.user)
+        return Response(NotificationSerializer(message, many=True).data,
+                        status=status.HTTP_200_OK)
+
+    @action(methods=['post'], detail=True, url_path='send-friend-request')
+    def send_friend_request(self, request, pk):
+        try:
+            from_user = request.user
+            to_user = User.objects.get(id=pk)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            friend_request, created = FriendRequest.objects.get_or_create(from_user=from_user,
+                                                                          to_user=to_user)
+            if created:
+                return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=True, url_path='accept-friend-request')
+    def accept_friend_request(self, request, pk):
+        try:
+            # Who needs to accept a friend request
+            friend_request = FriendRequest.objects.get(from_user_id=pk)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            if friend_request.to_user == request.user:
+                # B send to A; A accept : to_user is A, from_user is B
+                # After accept A is a friend with B
+                friend_request.to_user.friends.add(friend_request.from_user)
+                friend_request.from_user.friends.add(friend_request.to_user)
+                friend_request.delete()
+                return Response(status=status.HTTP_200_OK)
+
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['get'], detail=True, url_path='friend-suggest')
+    def get_friend_suggest(self, request, pk):
+        try:
+            friend_suggest = User.objects.filter(is_active=True) \
+                .exclude(id=pk)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            if friend_suggest:
+                return Response(FriendSuggestSerializer(friend_suggest, many=True).data,
+                                status=status.HTTP_200_OK)
+
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
@@ -67,6 +122,9 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         if self.action in ['add_comment', 'do_action',
                            'auction', 'sharing']:
             return [permissions.IsAuthenticated()]
+        if self.action in ['destroy', 'update', 'partial_update'
+                           'show_post', 'hide_post']:
+            return [PostOwnerPerms()]
         return [permissions.AllowAny()]
 
     @action(methods=['post'], detail=True, url_path='tags')
@@ -88,7 +146,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                                 status=status.HTTP_201_CREATED)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['get'], detail=True, url_path='get-comment')
+    @action(methods=['get'], detail=True, url_path='comments')
     def get_comments(self, request, pk):
         post = self.get_object()
         comments = post.comments.select_related('user').filter(active=True)
@@ -116,12 +174,14 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
     def do_action(self, request, pk):
         try:
             action_type = int(request.data['type'])
+            if action_type != 0 | action_type != 1:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
         except IndexError | ValueError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
-            act = Action.objects.update_or_create(type=action_type,
-                                                  creator=request.user,
-                                                  post=self.get_object())
+            act, _ = Action.objects.update_or_create(type=action_type,
+                                                     creator=request.user,
+                                                     post=self.get_object())
 
             return Response(ActionSerializer(act).data,
                             status=status.HTTP_200_OK)
@@ -140,7 +200,6 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
             return Response(AuctionSerializer(act).data,
                             status=status.HTTP_200_OK)
 
-    # Chưa thử nghiệm
     @action(methods=['post'], detail=True, url_path='sharing')
     def sharing(self, request, pk):
         try:
@@ -163,6 +222,30 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                 return Response(SharingSerializer(people_shared).data,
                                 status=status.HTTP_200_OK)
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    # Chưa thử nghiệm
+    @action(methods=['post'], detail=True, url_path='hide')
+    def hide_post(self, request, pk):
+        try:
+            p = Post.objects.get(pk=pk)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            p.active = False
+            p.save()
+            return Response(status=status.HTTP_200_OK)
+
+    # Chưa thử nghiệm
+    @action(methods=['post'], detail=True, url_path='show')
+    def show_post(self, request, pk):
+        try:
+            p = Post.objects.get(pk=pk)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            p.active = True
+            p.save()
+            return Response(status=status.HTTP_200_OK)
 
 
 class ProductViewSet(viewsets.ViewSet, generics.ListAPIView):
@@ -191,7 +274,7 @@ class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView,
     parser_classes = [MultiPartParser, ]
 
     def get_permissions(self):
-        if self.action in ['update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             return [CommentOwnerPerms()]
 
         return [permissions.IsAuthenticated()]

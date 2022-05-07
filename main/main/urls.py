@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -33,7 +32,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', include('demoApp.urls')),
-    path('admin/', admin.site.urls),
+
     re_path(r'^ckeditor/', include('ckeditor_uploader.urls')),
     re_path(r'^ckeditor/', include('ckeditor_uploader.urls')),
     path('__debug__/', include(debug_toolbar.urls)),

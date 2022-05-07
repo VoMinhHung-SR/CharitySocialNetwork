@@ -101,6 +101,9 @@ class Product(BaseModel):
 class Notification(models.Model):
     message = models.CharField(max_length=255, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.message
@@ -109,8 +112,8 @@ class Notification(models.Model):
 class Report(models.Model):
     content = models.CharField(max_length=255, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # post = models.ForeignKey(Post, on_delete=models.CASCADE,
-    #                          related_name='reports', blank=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='reports',
+                             blank=True, null=True)
 
     def __str__(self):
         return self.content
@@ -120,7 +123,7 @@ class ActionBase(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='actions')
 
     class Meta:
         abstract = True

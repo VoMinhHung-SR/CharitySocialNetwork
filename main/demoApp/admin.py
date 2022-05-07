@@ -1,14 +1,40 @@
 from django.contrib import admin
+from django.urls import path
 from django import forms
 from django.utils.safestring import mark_safe
 
 from .models import (Post, Category, Comment,
                      User, Product, Tag, Sharing,
-                     Report, Notification, Auction)
+                     Notification, Auction, FriendRequest)
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from django.template.response import TemplateResponse
+from django.db.models import Count
 
 
 # Register your models here.
+class DemoAppAdminSite(admin.AdminSite):
+    site_header = 'AdminCSN'
+
+    def get_urls(self):
+        return [
+                   path('post-stats/', self.stats_view)
+               ] + super().get_urls()
+
+    def stats_view(self, request):
+        post = Post.objects.filter(active=True).count()
+        stats = Post.objects.annotate(post_like_count=Count('actions'), post_comment_count=Count('comments'))\
+            .values('id', 'title', 'post_like_count', 'post_comment_count')
+        return TemplateResponse(request,
+                                'admin/post-stats.html', {
+                                    'count': post,
+                                    # 'likes': likes,
+                                    # 'comments': comments
+                                    'stats': stats
+                                })
+
+
+admin_site = DemoAppAdminSite(name='myAdmin')
+
 
 class PostForm(forms.ModelForm):
     content = forms.CharField(widget=CKEditorUploadingWidget)
@@ -67,6 +93,10 @@ class UserAdmin(admin.ModelAdmin):
             )
 
 
+class FriendRequestAdmin(admin.ModelAdmin):
+    list_display = ['id', 'from_user', 'to_user']
+
+
 class ShareAdmin(admin.ModelAdmin):
     list_display = ['id', 'description', 'created_date', 'updated_date', 'post', 'user']
 
@@ -87,13 +117,14 @@ class AuctionPostAdmin(admin.ModelAdmin):
     list_display = ['id', 'price', 'created_date', 'updated_date', 'user', 'post']
 
 
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Product, ProductAdmin)
-admin.site.register(Post, PostAdmin)
-admin.site.register(Tag, TagAdmin)
-admin.site.register(User, UserAdmin)
-admin.site.register(Comment, CommentAdmin)
-admin.site.register(Sharing, ShareAdmin)
-admin.site.register(Notification, NotificationAdmin)
+admin_site.register(Category, CategoryAdmin)
+admin_site.register(Product, ProductAdmin)
+admin_site.register(Post, PostAdmin)
+admin_site.register(Tag, TagAdmin)
+admin_site.register(User, UserAdmin)
+admin_site.register(Comment, CommentAdmin)
+admin_site.register(Sharing, ShareAdmin)
+admin_site.register(Notification, NotificationAdmin)
 # admin.site.register(Report, ReportAdmin)
-admin.site.register(Auction, AuctionPostAdmin)
+admin_site.register(Auction, AuctionPostAdmin)
+admin_site.register(FriendRequest, FriendRequestAdmin)
