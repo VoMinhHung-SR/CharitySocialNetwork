@@ -14,7 +14,7 @@ class CommentOwnerPerms(permissions.IsAuthenticated):
 
 class PostOwnerPerms(permissions.IsAuthenticated):
     def has_object_permission(self, request, view, obj):
-        return request.user == obj.user
+        return request.user == obj.author
 
 
 class OwnerProfilePerms(permissions.IsAuthenticated):

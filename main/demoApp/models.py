@@ -126,11 +126,9 @@ class ActionBase(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='actions')
 
     class Meta:
+        unique_together = ('creator', 'post')
         abstract = True
 
 
-class Action(ActionBase):
-    like, unlike = range(2)
-    # 0 = Like , 1 = UnLike
-    action = [(like, 'Like'), (unlike, 'Unlike')]
-    type = models.PositiveIntegerField(choices=action, default=unlike)
+class Like(ActionBase):
+    active = models.BooleanField(default=False)

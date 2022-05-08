@@ -1,11 +1,11 @@
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import viewsets, generics
-from .models import (Post, Product, Tag, Action,
+from .models import (Post, Product, Tag, Like,
                      Comment, User, Auction, Sharing,
                      Notification, FriendRequest)
 from .serializers import (PostSerializer, ProductSerializer,
-                          PostDetailSerializer, ActionSerializer,
+                          PostDetailSerializer, AuthPostDetailSerializer,
                           CommentSerializer, UserSerializer,
                           AuctionSerializer, SharingSerializer,
                           NotificationSerializer, FriendSuggestSerializer)
@@ -119,11 +119,12 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ['add_comment', 'do_action',
-                           'auction', 'sharing']:
-            return [permissions.IsAuthenticated()]
-        if self.action in ['destroy', 'update', 'partial_update'
+        if self.action in ['add_comment', 'like',
+                           'auction', 'sharing',
                            'show_post', 'hide_post']:
+            return [permissions.IsAuthenticated()]
+        if self.action in ['destroy', 'update',
+                           'partial_update']:
             return [PostOwnerPerms()]
         return [permissions.AllowAny()]
 
@@ -170,21 +171,36 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
 
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['post'], detail=True, url_path='like')
-    def do_action(self, request, pk):
-        try:
-            action_type = int(request.data['type'])
-            if action_type != 0 | action_type != 1:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-        except IndexError | ValueError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        else:
-            act, _ = Action.objects.update_or_create(type=action_type,
-                                                     creator=request.user,
-                                                     post=self.get_object())
+    # @action(methods=['post'], detail=True, url_path='like')
+    # def do_action(self, request, pk):
+    #     try:
+    #         action_type = int(request.data['type'])
+    #         if action_type != 0 | action_type != 1:
+    #             return Response(status=status.HTTP_400_BAD_REQUEST)
+    #     except IndexError | ValueError:
+    #         return Response(status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         act, _ = Action.objects.update_or_create(type=action_type,
+    #                                                  creator=request.user,
+    #                                                  post=self.get_object())
+    #
+    #         return Response(ActionSerializer(act).data,
+    #                         status=status.HTTP_200_OK)
 
-            return Response(ActionSerializer(act).data,
-                            status=status.HTTP_200_OK)
+    @action(methods=['post'], url_path='like', detail=True)
+    def like(self, request, pk):
+        post = self.get_object()
+        user = request.user
+
+        l, _ = Like.objects.get_or_create(post=post, creator=user)
+        l.active = not l.active
+        try:
+            l.save()
+        except:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(data=AuthPostDetailSerializer(post, context={'request': request}).data,
+                        status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='auction')
     def auction(self, request, pk):

@@ -1,8 +1,9 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import (Post, Product, Tag,
-                     Action, Comment, User,
+                     Comment, User,
                      Auction, Sharing, Notification)
 from rest_framework import serializers
+
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -78,10 +79,17 @@ class PostDetailSerializer(PostSerializer):
                  ["product", "creators_comment", "people_shared", "auctioneers"]
 
 
-class ActionSerializer(ModelSerializer):
+class AuthPostDetailSerializer(PostDetailSerializer):
+    like = serializers.SerializerMethodField()
+
+    def get_like(self, post):
+        request = self.context.get('request')
+        if request:
+            return post.actions.filter(creator=request.user, active=True).exists()
+
     class Meta:
-        model = Action
-        fields = ['id', 'type', 'created_date']
+        model = Post
+        fields = PostDetailSerializer.Meta.fields + ['like']
 
 
 class AuctionSerializer(ModelSerializer):
