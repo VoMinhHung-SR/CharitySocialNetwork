@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from .models import User
+from .models import User, Post
 
 
 class CommentOwnerPerms(permissions.IsAuthenticated):
@@ -10,6 +10,11 @@ class CommentOwnerPerms(permissions.IsAuthenticated):
         """
 
         return request.user == comment.user
+
+
+class AuctioneersPerms(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.user
 
 
 class PostOwnerPerms(permissions.IsAuthenticated):

@@ -1,14 +1,14 @@
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import viewsets, generics
-from .models import (Post, Product, Tag, Like,
+from .models import (Post, Tag, Like,
                      Comment, User, Auction, Sharing,
                      Notification, FriendRequest)
-from .serializers import (PostSerializer, ProductSerializer,
+from .serializers import (PostSerializer, TagSerializer,
                           PostDetailSerializer, AuthPostDetailSerializer,
                           CommentSerializer, UserSerializer,
                           AuctionSerializer, SharingSerializer,
-                          NotificationSerializer, FriendSuggestSerializer)
+                          NotificationSerializer, FriendSuggestSerializer, )
 from .paginator import BasePagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ from django.http import Http404
 from rest_framework.parsers import MultiPartParser
 from rest_framework.parsers import JSONParser
 from .perms import (CommentOwnerPerms, PostOwnerPerms,
-                    OwnerProfilePerms)
+                    OwnerProfilePerms, AuctioneersPerms)
 
 
 # Create your views here.
@@ -38,7 +38,8 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
 
     @action(methods=['get'], detail=False, url_path='current-user')
     def get_current_user(self, request):
-        return Response(self.serializer_class(request.user).data)
+        return Response(self.serializer_class(request.user, context={'request': request}).data,
+                        status=status.HTTP_200_OK)
 
     @action(methods=['get'], detail=True, url_path='notifications')
     def get_notifications(self, request, pk):
@@ -65,8 +66,8 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
         try:
             # Who needs to accept a friend request
             friend_request = FriendRequest.objects.get(from_user_id=pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        except:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             if friend_request.to_user == request.user:
                 # B send to A; A accept : to_user is A, from_user is B
@@ -101,7 +102,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
     parser_classes = [JSONParser, MultiPartParser, ]
 
     def get_queryset(self):
-        post = Post.objects.filter(active=True)
+        post = Post.objects.filter(active=True).order_by('-id')
 
         q = self.request.query_params.get('q')
         if q is not None:
@@ -121,12 +122,37 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
     def get_permissions(self):
         if self.action in ['add_comment', 'like',
                            'auction', 'sharing',
-                           'show_post', 'hide_post']:
+                           'show_post', 'hide_post',
+                           'add_post']:
             return [permissions.IsAuthenticated()]
         if self.action in ['destroy', 'update',
-                           'partial_update']:
+                           'partial_update', 'add_tags']:
             return [PostOwnerPerms()]
         return [permissions.AllowAny()]
+
+    @action(methods=['post'], detail=False, url_path='add-post')
+    def add_post(self, request):
+        try:
+            user = request.user
+            description = request.data.get('description')
+            title = request.data.get('title')
+            image = request.data.get('image')
+            tags = request.data.get('tags')
+        except:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            if tags is not None:
+                post = Post.objects.create(author=user, title=title,
+                                           description=description,
+                                           image=image)
+                for tag in tags:
+                    tag_obj, _ = Tag.objects.get_or_create(name=tag)
+                    post.tags.add(tag_obj)
+
+                post.save()
+                return Response(PostSerializer(post, context={'request': request}).data,
+                                status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=True, url_path='tags')
     def add_tags(self, request, pk):
@@ -143,7 +169,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                     tag_obj, _ = Tag.objects.get_or_create(name=tag)
                     post.tags.add(tag_obj)
                 post.save()
-                return Response(data=PostDetailSerializer(post).data,
+                return Response(data=PostDetailSerializer(post, context={'request': request}).data,
                                 status=status.HTTP_201_CREATED)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -153,6 +179,14 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         comments = post.comments.select_related('user').filter(active=True)
 
         return Response(CommentSerializer(comments, many=True).data,
+                        status=status.HTTP_200_OK)
+
+    @action(methods=['get'], detail=True, url_path='auctions')
+    def get_auctions(self, request, pk):
+        post = self.get_object()
+        auctions = post.auctions.select_related('user').filter(active=True)
+
+        return Response(AuctionSerializer(auctions, many=True).data,
                         status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='add-comment')
@@ -171,22 +205,6 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
 
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    # @action(methods=['post'], detail=True, url_path='like')
-    # def do_action(self, request, pk):
-    #     try:
-    #         action_type = int(request.data['type'])
-    #         if action_type != 0 | action_type != 1:
-    #             return Response(status=status.HTTP_400_BAD_REQUEST)
-    #     except IndexError | ValueError:
-    #         return Response(status=status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         act, _ = Action.objects.update_or_create(type=action_type,
-    #                                                  creator=request.user,
-    #                                                  post=self.get_object())
-    #
-    #         return Response(ActionSerializer(act).data,
-    #                         status=status.HTTP_200_OK)
-
     @action(methods=['post'], url_path='like', detail=True)
     def like(self, request, pk):
         post = self.get_object()
@@ -202,16 +220,18 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         return Response(data=AuthPostDetailSerializer(post, context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
-    @action(methods=['post'], detail=True, url_path='auction')
+    @action(methods=['post'], detail=True, url_path='add-auction')
     def auction(self, request, pk):
         try:
-            price = int(request.data['price'])
+            price = request.data.get('price')
+            price = int(price)
+            # price = int(request.data['price'])
         except IndexError | ValueError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
-            act = Auction.objects.update_or_create(price=price,
-                                                   user=request.user,
-                                                   post=self.get_object())
+            act, _ = Auction.objects.update_or_create(price=price,
+                                                      user=request.user,
+                                                      post=self.get_object())
 
             return Response(AuctionSerializer(act).data,
                             status=status.HTTP_200_OK)
@@ -227,9 +247,9 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
             tags = request.data.get('tags')
 
             if tags is not None:
-                people_shared = Sharing.objects.create(description=description,
-                                                       user=request.user,
-                                                       post=post)
+                people_shared, _ = Sharing.objects.get_or_create(description=description,
+                                                                 user=request.user,
+                                                                 post=post)
                 for tag in tags:
                     tag_obj, _ = Tag.objects.get_or_create(name=tag)
                     people_shared.tags.add(tag_obj)
@@ -239,7 +259,6 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                                 status=status.HTTP_200_OK)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    # Chưa thử nghiệm
     @action(methods=['post'], detail=True, url_path='hide')
     def hide_post(self, request, pk):
         try:
@@ -247,11 +266,12 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            p.active = False
-            p.save()
-            return Response(status=status.HTTP_200_OK)
+            if request.user == p.author:
+                p.active = False
+                p.save()
+                return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    # Chưa thử nghiệm
     @action(methods=['post'], detail=True, url_path='show')
     def show_post(self, request, pk):
         try:
@@ -259,27 +279,11 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            p.active = True
-            p.save()
-            return Response(status=status.HTTP_200_OK)
-
-
-class ProductViewSet(viewsets.ViewSet, generics.ListAPIView):
-    serializer_class = ProductSerializer
-    pagination_class = BasePagination
-
-    def get_queryset(self):
-        product = Product.objects.filter(active=True)
-
-        q = self.request.query_params.get('q')
-        if q is not None:
-            product = product.filter(name__icontains=q)
-
-        cate_id = self.request.query_params.get('category_id')
-        if cate_id is not None:
-            product = product.filter(category=cate_id)
-
-        return product
+            if request.user == p.author:
+                p.active = True
+                p.save()
+                return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView,
@@ -294,6 +298,32 @@ class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView,
             return [CommentOwnerPerms()]
 
         return [permissions.IsAuthenticated()]
+
+
+class AuctionViewSet(viewsets.ViewSet, generics.DestroyAPIView,
+                     generics.UpdateAPIView):
+    queryset = Auction.objects.filter(active=True)
+    serializer_class = AuctionSerializer
+    permission_classes = permissions.IsAuthenticated()
+    parser_classes = [MultiPartParser, ]
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [AuctioneersPerms()]
+
+        return [permissions.IsAuthenticated()]
+
+
+class TagViewSet(viewsets.ViewSet, generics.UpdateAPIView,
+                 generics.DestroyAPIView):
+    queryset = Tag.objects.filter(active=True)
+    serializer_class = TagSerializer
+    permission_classes = permissions.IsAuthenticated()
+    parser_classes = [MultiPartParser, ]
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated()]
 
 
 # OAUTH2-INFO

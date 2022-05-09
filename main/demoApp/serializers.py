@@ -1,6 +1,5 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
-from .models import (Post, Product, Tag,
-                     Comment, User,
+from .models import (Post, Tag, Comment, User,
                      Auction, Sharing, Notification)
 from rest_framework import serializers
 
@@ -16,8 +15,9 @@ class UserSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
-        user = User(**validated_data)
-        user = user.set_password(user.password)
+        data = validated_data.copy()
+        user = User(**data)
+        user.set_password(user.password)
         user.save()
 
         return user
@@ -44,30 +44,27 @@ class CommentSerializer(ModelSerializer):
         fields = ['id', 'content', 'created_date']
 
 
+class AuctionSerializer(ModelSerializer):
+    class Meta:
+        model = Auction
+        fields = ['id', 'price', 'user', 'post']
+
+
 class PostSerializer(ModelSerializer):
     tags = TagSerializer(many=True)
+    image = serializers.SerializerMethodField(source='image')
 
     class Meta:
         model = Post
-        fields = ["id", "created_date", "updated_date", "title",
-                  "description", "author", "tags"]
+        fields = ["id", "title", "description", "image",
+                  "created_date", "updated_date", "author", "tags"]
 
-
-class ProductSerializer(ModelSerializer):
-    image = SerializerMethodField()
-
-    def get_image(self, product):
+    def get_image(self, obj):
         request = self.context['request']
-        name = product.image.name
-        if name.startswith('static/'):
-            path = '/%s' % name
-        else:
-            path = '/static/%s' % name
-        return request.build_absolute_uri(path)
+        if obj.image and not obj.image.name.startswith("/static"):
+            path = '/static/%s' % obj.image.name
 
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'image', 'category']
+            return request.build_absolute_uri(path)
 
 
 class PostDetailSerializer(PostSerializer):
@@ -75,8 +72,7 @@ class PostDetailSerializer(PostSerializer):
 
     class Meta:
         model = PostSerializer.Meta.model
-        fields = PostSerializer.Meta.fields + \
-                 ["product", "creators_comment", "people_shared", "auctioneers"]
+        fields = PostSerializer.Meta.fields + ["creators_comment", "people_shared", "auctioneers"]
 
 
 class AuthPostDetailSerializer(PostDetailSerializer):
@@ -90,12 +86,6 @@ class AuthPostDetailSerializer(PostDetailSerializer):
     class Meta:
         model = Post
         fields = PostDetailSerializer.Meta.fields + ['like']
-
-
-class AuctionSerializer(ModelSerializer):
-    class Meta:
-        model = Auction
-        fields = ['id', 'price', 'user', 'post', 'created_date']
 
 
 class SharingSerializer(ModelSerializer):

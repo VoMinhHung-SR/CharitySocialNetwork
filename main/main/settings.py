@@ -108,8 +108,8 @@ DATABASES = {
 }
 # Oauth2
 OAUTH2_INFO = {
-    "client_id": "3c26Jqvb0ITvWsB3ihurVJ7s4WkIyQRMdTCUM3vX",
-    "client_secret": "0QnCAsSjEN1EIzwSMBz6PYAPlcWBogwNDBFOr4lrinwjPQ00GNnMxkpy1W79LKOWsKiZJOo0IdPYiM9HgEXKQamZASJT38EzkmLb2gHKxaVuyBiyktHLNgtfilEQeexz"
+    "client_id": "185N8tH5Zp8pHxW5mrK9dWFyKbIEnL7W6H1jk3rH",
+    "client_secret": "bvwCwSkC9HBnqCVwLZoBWIJKEvyLz89Rh7AaCorF3iPVHcHyKErxEHj6AzmJWJ9jGL3vjfwuSydGYuy9YFpBFqF2QfQlZil4MoirVeHe8ot6B6wzvX7DYcBFFxOTH8WA"
 }
 # Model thuoc tinh
 STATIC_URL = 'static/'

@@ -3,8 +3,8 @@ from django.urls import path
 from django import forms
 from django.utils.safestring import mark_safe
 
-from .models import (Post, Category, Comment,
-                     User, Product, Tag, Sharing,
+from .models import (Post, Comment,
+                     User, Tag, Sharing,
                      Notification, Auction, FriendRequest)
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.template.response import TemplateResponse
@@ -44,10 +44,6 @@ class PostForm(forms.ModelForm):
         fields = '__all__'
 
 
-# class UserFriendsInlineAdmin(admin.TabularInline):
-#     model = User.friends.through
-
-
 class PostTagInlineAdmin(admin.TabularInline):
     model = Post.tags.through
 
@@ -57,30 +53,21 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class PostAdmin(admin.ModelAdmin):
-    inlines = (PostTagInlineAdmin,)
     forms = PostForm
-
-    list_display = ['id', 'title', 'description', 'created_date', 'updated_date', 'author']
+    inlines = (PostTagInlineAdmin,)
+    list_display = ['id', 'title', 'description', 'created_date', 'updated_date', 'author', 'image']
     list_filter = ['author', 'title', 'created_date']
 
-
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'created_date', 'updated_date', 'image', 'category']
     readonly_fields = ['show_image']
 
-    def show_image(self, product):
-        if product:
+    def show_image(self, post):
+        if post:
             return mark_safe(
-                "<img src='/static/{0}' alt='{1}' width='200px'/>".format(product.image.name, product.name)
+                "<img src='/static/{0}' alt='{1}' width='200px'/>".format(post.image.name, post.title)
             )
 
 
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name']
-
-
 class UserAdmin(admin.ModelAdmin):
-    # inlines = [UserFriendsInlineAdmin, ]
     list_display = ['id', 'username', 'first_name', 'last_name', 'email', 'address', 'avatar']
     list_filter = ['username']
     search_fields = ['username']
@@ -117,8 +104,6 @@ class AuctionPostAdmin(admin.ModelAdmin):
     list_display = ['id', 'price', 'created_date', 'updated_date', 'user', 'post']
 
 
-admin_site.register(Category, CategoryAdmin)
-admin_site.register(Product, ProductAdmin)
 admin_site.register(Post, PostAdmin)
 admin_site.register(Tag, TagAdmin)
 admin_site.register(User, UserAdmin)
