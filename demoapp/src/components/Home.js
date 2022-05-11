@@ -1,12 +1,12 @@
 import * as React from 'react';
 import Container from '@mui/material/Container';
 import { Avatar, Grid } from '@mui/material';
-import PostCard from './Card';
 import Paper from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
 import Relationship from './Relationship';
 import { userContext } from '../App';
 import { useContext } from "react";
+import LoadPostCard from './Post/LoadPostCard';
 const Item = styled(Paper)(
     ({ theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -43,7 +43,7 @@ const Home = () =>{
                 <Grid container spacing={12}>
                     <Grid item xs={temp} style={{"margin":"auto"}}>
                         <Item>
-                            <PostCard/>
+                            <LoadPostCard/>
                         </Item>
                     </Grid>
                     {sideBar}

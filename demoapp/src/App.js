@@ -11,8 +11,8 @@ import Message from "./components/Message";
 import Profile from "./components/Profile";
 import EditProfile from "./components/EditProfile";
 import Body from "./layout/Body";
-import AddPost from "./components/AddPost";
-import PostDetail from "./components/PostDetail";
+import AddPost from "./components/Post/AddPost";
+import PostDetail from "./components/Post/PostDetail";
 
 
 
@@ -27,27 +27,27 @@ function App() {
     <BrowserRouter>
       <userContext.Provider value={[user,dispatch]}>
       
-      <Header/>
-      
-      <Routes>
-          <Route path="/" element={<Body/>}/>
-          <Route path="/posts/postId" element={<PostDetail/>}/>
-          <Route path="/categories" element={<Category/>}/>
+        <Header/>
+        
+        <Routes>
+            <Route path="/" element={<Body/>}/>
+            <Route path="/posts/:postID" element={<PostDetail/>}/>
+            <Route path="/categories" element={<Category/>}/>
 
 
-          <Route path="/login"  element={<Login/>}/>
-          <Route path="/register" element={<Register/>}/>
+            <Route path="/login"  element={<Login/>}/>
+            <Route path="/register" element={<Register/>}/>
 
-          <Route path="/profile" element={<Profile/>}>
-            <Route path='edit-profile' element={<EditProfile/>}/>
-          </Route>
+            <Route path="/profile" element={<Profile/>}>
+              <Route path='edit-profile' element={<EditProfile/>}/>
+            </Route>
 
-          <Route path="/add-post" element={<AddPost/>}/>
-          <Route path="/aboutus" element={<AboutUs/>}/>
-          <Route path="/inbox" element={<Message/>}/>
+            <Route path="/add-post" element={<AddPost/>}/>
+            <Route path="/aboutus" element={<AboutUs/>}/>
+            <Route path="/inbox" element={<Message/>}/>
 
-      </Routes>
-      <Footer/>
+        </Routes>
+        <Footer/>
 
       </userContext.Provider>
    

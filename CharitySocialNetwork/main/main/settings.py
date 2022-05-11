@@ -25,9 +25,6 @@ SECRET_KEY = 'django-insecure-==$3p^-31dkluot6l#(vi80-!_1x-j@3kc&as)x4^@q%+*-^68
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -45,6 +42,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'drf_yasg',
     'debug_toolbar',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -56,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 INTERNAL_IPS = [
@@ -116,7 +115,11 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'demoApp.User'
 MEDIA_ROOT = '%s/demoApp/static/' % BASE_DIR
 CKEDITOR_UPLOAD_PATH = 'post/'
-
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
+OAUTH2_PROVIDER = {
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 

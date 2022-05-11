@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom";
-import { Container, FormControl, Nav, Navbar, Form, Button } from "react-bootstrap"
+import { Link, useNavigate } from "react-router-dom";
+import { Container, FormControl, Navbar, Form, Button } from "react-bootstrap"
 import 'bootstrap/dist/css/bootstrap.min.css';
-// import Category from "../components/Category.js";
 import { useContext, useState } from "react";
 import { userContext } from '../App';
 import {
@@ -21,7 +20,7 @@ import Notifications from "../components/Notifications";
 const Header = () => {
 
 
-    const [kw, setKw] = useState("")
+
     const [user, dispatch] = useContext(userContext)
 
 
@@ -34,11 +33,13 @@ const Header = () => {
         setAnchorEl(null);
     };
 
-
+    // ==== QuerySet ====
+    const nav = useNavigate()
+    const [q, setQ] = useState("")
     const search = (event) => {
         event.preventDefault()
 
-        Nav(`/?kw=${kw}`)
+        nav(`/?q=${q}`)
 
     }
 
@@ -58,11 +59,11 @@ const Header = () => {
             </Link>
         </MenuItem>
         <MenuItem>
-             <Link to="/register" className="nav-link text-danger">
+            <Link to="/register" className="nav-link text-danger">
                 <HowToRegIcon style={{ "marginRight": "5px" }} />Đăng Ký
             </Link>
         </MenuItem>
-        
+
     </>
 
     if (user != null)
@@ -122,41 +123,41 @@ const Header = () => {
                 </MenuItem>
             </Menu>
             {/* Show nav menu */}
-            <MenuItem style={{"padding":"0px"}}>
+            <MenuItem style={{ "padding": "0px" }}>
                 <Tooltip title="Home">
                     <IconButton size="small" color="inherit" style={{ "marginRight": "5px" }}>
                         <Link to="/">
-                            <HomeIcon style={{"color":"#333"}}/>
+                            <HomeIcon style={{ "color": "#333" }} />
                         </Link>
                     </IconButton>
                 </Tooltip>
             </MenuItem>
-            <MenuItem  style={{"padding":"0px"}}>
+            <MenuItem style={{ "padding": "0px" }}>
                 <Tooltip title="AddPost">
                     <IconButton size="small" color="inherit" style={{ "marginRight": "5px" }} >
                         <Link to="/add-post"  >
-                            <AddBoxOutlinedIcon style={{"color":"#333"}}/>
+                            <AddBoxOutlinedIcon style={{ "color": "#333" }} />
                         </Link>
                     </IconButton>
                 </Tooltip>
             </MenuItem>
-            <MenuItem  style={{"padding":"0px"}}>
+            <MenuItem style={{ "padding": "0px" }}>
                 <Tooltip title="Massage">
                     <IconButton size="small" color="inherit">
                         <Badge badgeContent={4} color="error">
                             <Link to="/inbox">
-                                <MailOutlineIcon style={{"color":"#333"}}/>
+                                <MailOutlineIcon style={{ "color": "#333" }} />
                             </Link>
                         </Badge>
                     </IconButton>
                 </Tooltip>
             </MenuItem>
-            <MenuItem  style={{"padding":"0px"}}>
+            <MenuItem style={{ "padding": "0px" }}>
                 <Tooltip title="Notification">
-                    <Notifications/>
+                    <Notifications />
                 </Tooltip>
             </MenuItem>
-            
+
 
 
             <IconButton onClick={handleClick} size="small" sx={{ ml: 2 }}
@@ -172,21 +173,21 @@ const Header = () => {
     return (
         <>
             <Navbar collapseOnSelect expand="lg" >
-                <Container style={{"width":"70%"}}>
+                <Container style={{ "width": "70%" }}>
                     <Link className=" navbar-brand nav-link" to="/">
-                        <Avatar alt="Shi-Logo" style={{"width":"50px"}}
-                        src="https://res.cloudinary.com/dl6artkyb/image/upload/v1650559462/Demo/logo_mobile_mte4e1.png"/>
+                        <Avatar alt="Shi-Logo" style={{ "width": "50px" }}
+                            src="https://res.cloudinary.com/dl6artkyb/image/upload/v1650559462/Demo/logo_mobile_mte4e1.png" />
                     </Link>
                     <Navbar.Toggle aria-controls="responsive-navbar-nav" />
                     <Navbar.Collapse id="responsive-navbar-nav">
                         <Form className="d-flex" onSubmit={search} style={{ "marginRight": "auto" }}>
                             <FormControl
                                 type="search"
-                                value={kw}
-                                onChange={event => setKw(event.target.value)}
-                                placeholder="Tu khoa..."
+                                placeholder="Nhập tiêu đề..."
                                 className="me-2"
                                 aria-label="Search"
+                                value={q}
+                                onChange={event => setQ(event.target.value)}
                             />
                             <Button type="submit" variant="outline-success">Tim</Button>
                         </Form>

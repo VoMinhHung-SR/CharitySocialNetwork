@@ -50,9 +50,25 @@ class AuctionSerializer(ModelSerializer):
         fields = ['id', 'price', 'user', 'post']
 
 
+class AuthorSerializer(ModelSerializer):
+    avatar = serializers.SerializerMethodField(source='avatar')
+
+    def get_avatar(self, obj):
+        request = self.context['request']
+        if obj.avatar and not obj.avatar.name.startswith("/static"):
+            path = '/static/%s' % obj.avatar.name
+
+            return request.build_absolute_uri(path)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'avatar']
+
+
 class PostSerializer(ModelSerializer):
     tags = TagSerializer(many=True)
     image = serializers.SerializerMethodField(source='image')
+    author = AuthorSerializer()
 
     class Meta:
         model = Post
@@ -69,7 +85,7 @@ class PostSerializer(ModelSerializer):
 
 class PostDetailSerializer(PostSerializer):
     tags = TagSerializer(many=True)
-
+    author = AuthorSerializer()
     class Meta:
         model = PostSerializer.Meta.model
         fields = PostSerializer.Meta.fields + ["creators_comment", "people_shared", "auctioneers"]
