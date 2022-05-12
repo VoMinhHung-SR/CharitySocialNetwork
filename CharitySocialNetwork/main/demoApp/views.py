@@ -93,6 +93,17 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
 
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['get'], detail=True, url_path='post-owner')
+    def get_post_owner(self, request, pk):
+        try:
+            posts = Post.objects.filter(author=self.get_object()).all()
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(PostSerializer(posts, many=True,
+                                           context={'request': request}).data,
+                            status=status.HTTP_200_OK)
+
 
 class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                   generics.RetrieveAPIView, generics.UpdateAPIView,
@@ -176,9 +187,10 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
     @action(methods=['get'], detail=True, url_path='comments')
     def get_comments(self, request, pk):
         post = self.get_object()
-        comments = post.comments.select_related('user').filter(active=True)
+        comments = post.comments.select_related('user').filter(active=True).order_by("-id")
 
-        return Response(CommentSerializer(comments, many=True).data,
+        return Response(CommentSerializer(comments, many=True,
+                                          context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
     @action(methods=['get'], detail=True, url_path='auctions')
@@ -200,7 +212,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                 c = Comment.objects.create(content=content,
                                            user=request.user,
                                            post=self.get_object())
-                return Response(CommentSerializer(c).data,
+                return Response(CommentSerializer(c, context={'request': request}).data,
                                 status=status.HTTP_201_CREATED)
 
             return Response(status=status.HTTP_400_BAD_REQUEST)

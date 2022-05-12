@@ -24,8 +24,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import { userContext } from '../../App';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Comments from '../Comments';
-import APIs, { endpoints } from '../../configs/APIs'
+import APIs, { authApi, endpoints } from '../../configs/APIs'
 import Moment from 'react-moment';
+import { Form } from 'react-bootstrap';
 
 const ExpandMore = styled((props) => {
 
@@ -58,16 +59,22 @@ const PostDetail = () => {
     };
 
 
-
     const [active, setActive] = useState("More Description..");
     const [user] = useContext(userContext);
+    const [count, setCount] = useState(1);
 
     const nav = useNavigate();
     const go = () => nav("/");
     // ====== Fetch API ======
-    const [post, setPost] = useState(null)
-    const { postID } = useParams()
 
+    const [post, setPost] = useState(null);
+    const { postID } = useParams();
+
+    const [content, setContent] = useState();
+    const [comments, setComments] = useState([]);
+
+    
+    
     useEffect(() => {
         const loadPost = async () => {
             try {
@@ -77,8 +84,60 @@ const PostDetail = () => {
                 console.error(err)
             }
         }
+        const loadComments = async () =>{
+            try{
+                const res = await APIs.get(endpoints['comments'](postID));
+                setComments(res.data);
+                console.log(res.data);
+            }catch(err){
+                console.log(err);
+            }
+        }
+        loadComments()
         loadPost();
-    }, [postID])
+    }, [count])
+
+    const addComment = async (event) => {
+        event.preventDefault();
+
+        const res = await authApi().post(endpoints['add-comment'](postID), {
+            'content': content,
+            'post': postID,
+            'user': user
+        });
+        console.info(res.data);
+        comments.push(res.data);
+        setComments(comments)
+        setCount(comments.length)
+        // setComments([...comments, res.data])
+    }
+
+    //  sumbmit Form add comment
+    function addCommentForm() {
+        return (
+            <>
+                {/* render addComment form */}
+                <Form onSubmit={addComment}>
+                    <FormControl fullWidth >
+                        <InputLabel htmlFor="outlined-adornment-amount">Nhập vào bình luận</InputLabel>
+                        <OutlinedInput
+                            id="outlined-adornment-amount"
+                            value={content}
+                            onChange={(event)=>setContent(event.target.value)}
+                            label="Nhập vào bình luận"
+                            multiline
+                            rows={3}
+                            endAdornment={
+                                <IconButton position="start" type='submit'>
+                                    <SendIcon />
+                                </IconButton>
+                            }
+                        />
+                    </FormControl>
+                </Form>
+            </>
+        )
+    }
 
     let act = <>
         <div style={{ "display": "flex", "textAlign": "center", "width": "100%" }}>
@@ -88,14 +147,15 @@ const PostDetail = () => {
     </>
 
 
-    if (user != null)
+    if (user !== null)
         act = <>
             <IconButton aria-label="add to favorites">
                 <FavoriteIcon />
             </IconButton>
 
             <IconButton aria-label="add comment"
-                onClick={() => { setActive("Comment"); handleExpandClick() }}>
+                onClick={() => { setActive("Comment");
+                                 handleExpandClick(); }}>
                 <CommentIcon />
             </IconButton>
 
@@ -116,7 +176,7 @@ const PostDetail = () => {
                 <ExpandMoreIcon></ExpandMoreIcon>
             </ExpandMore>
         </>
-    if (post == null){
+    if (post === null){
         return <h1>Loading</h1>
     }
             
@@ -195,13 +255,25 @@ const PostDetail = () => {
                                 <CardContent>
                                     <div className='text-center'>{active}</div>
                                     <Divider style={{ "margin": "5px 0px 20px 0px" }} />
-                                    {active === "Comment" && <Comments />}
-                                    {active === "Auction" && addAution()}
+                                    { active === "Comment" && addCommentForm()}
+                                    { active === "Auction" && addAution()}
                                 </CardContent>
                             </Collapse>
+
+                            
+                            {comments.map((comment)=>{     
+                                return(
+                                    <Comments 
+                                        image={comment.user.avatar}
+                                        username={comment.user.username}
+                                        content={comment.content}
+                                        created_date={comment.created_date}
+                                    />
+                                )}
+                            )}
+                            
                         </Grid>
 
-                        {/* </Card> */}
                     </Stack>
                 </Grid>
 
@@ -229,5 +301,8 @@ function addAution() {
         </>
     )
 }
+
+
+
 
 export default PostDetail

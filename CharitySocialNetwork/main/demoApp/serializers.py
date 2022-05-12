@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer
 from .models import (Post, Tag, Comment, User,
                      Auction, Sharing, Notification)
 from rest_framework import serializers
@@ -38,12 +38,6 @@ class TagSerializer(ModelSerializer):
         fields = ["id", "name"]
 
 
-class CommentSerializer(ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ['id', 'content', 'created_date']
-
-
 class AuctionSerializer(ModelSerializer):
     class Meta:
         model = Auction
@@ -63,6 +57,14 @@ class AuthorSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'avatar']
+
+
+class CommentSerializer(ModelSerializer):
+    user = AuthorSerializer()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'created_date', 'user']
 
 
 class PostSerializer(ModelSerializer):

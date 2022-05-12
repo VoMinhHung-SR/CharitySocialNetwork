@@ -5,7 +5,10 @@ export let endpoints = {
     'posts': '/posts/',
     'postDetail':(postID) => `/posts/${postID}/`,
     'login': '/o/token/',
-    'current-user':'/users/current-user/'
+    'post-owner':(userID) => `/users/${userID}/post-owner/`,
+    'current-user':'/users/current-user/',
+    'comments': (postID) => `/posts/${postID}/comments/`,
+    'add-comment':(postID) => `/posts/${postID}/add-comment/`
 }
 export const authApi = () => {
     return axios.create({

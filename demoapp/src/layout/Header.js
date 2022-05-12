@@ -99,7 +99,7 @@ const Header = () => {
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
                 <Link to="/profile" className="nav-link" style={{ "padding": "0px" }}>
                     <MenuItem style={{ "color": "#333" }}>
-                        <Avatar /> Profile
+                        <Avatar src={user.avatar} /> Trang cá nhân
                     </MenuItem>
                 </Link>
                 <Divider />
@@ -164,7 +164,7 @@ const Header = () => {
                 aria-controls={open ? 'account-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}>
-                <Avatar sx={{ width: 32, height: 32 }}>Ad</Avatar>
+                <Avatar sx={{ width: 32, height: 32 }} src={user.avatar}></Avatar>
             </IconButton>
             {/* End nav menu */}
         </>

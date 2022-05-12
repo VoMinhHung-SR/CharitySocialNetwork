@@ -26,7 +26,7 @@ const Home = () =>{
         sideBar = <>
         <Grid item xs={4}>
             <Item style={{"margin":"10px", "display":"flex","justifyContent":"center"}}>
-                <Avatar>Ad</Avatar>
+                <Avatar src={user.avatar}></Avatar>
                 <p style={{"padding":"10px", "justifyContent":"center", "margin":"0"}}>{user.username}</p>
             </Item>
             <Item style={{"margin":"10px"}}>
