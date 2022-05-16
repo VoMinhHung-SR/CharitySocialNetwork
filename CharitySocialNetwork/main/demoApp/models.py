@@ -81,6 +81,9 @@ class Auction(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='auctions')
 
+    class Meta:
+        unique_together = ('user', 'post')
+
 
 # UserOption
 class Notification(models.Model):

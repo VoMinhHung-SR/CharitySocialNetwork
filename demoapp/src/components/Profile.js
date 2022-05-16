@@ -75,7 +75,7 @@ const Profile = () => {
                         <Item>
                             <Grid container spacing={3}>
                                 <Grid item xs="3" style={{ "margin": "auto" }}>
-                                    <Avatar style={{ "margin": "auto", "width": "150px", "height": "150px" }} src={user.avatar}></Avatar>
+                                    <Avatar style={{ "margin": "auto", "width": "150px", "height": "150px" }} src={user.avatar_path}></Avatar>
                                 </Grid>
                                 <Grid item xs={8}>
                                     <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
@@ -92,7 +92,7 @@ const Profile = () => {
                                             <Item><strong>Email:</strong> {user.email && user.email}</Item>
                                         </Grid>
                                         <Grid item xs={6}>
-                                            <Item><strong>Số điện thoại:</strong> {user.phonenumber && user.phonenumber}</Item>
+                                            <Item><strong>Số điện thoại:</strong> {user.phone_number && user.phone_number}</Item>
                                         </Grid>
                                         <Grid item xs={4}>
                                             <Item><strong>Địa chỉ:</strong> {user.address && user.address}</Item>

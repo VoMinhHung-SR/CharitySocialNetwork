@@ -2,7 +2,6 @@ import { BrowserRouter,Routes, Route} from "react-router-dom";
 import AboutUs from "./components/AboutUs";
 import Footer from "./layout/Footer";
 import Header from "./layout/Header"
-import Category from "./components/Category";
 import { createContext, useReducer } from "react";
 import myReducer from "./reducers/myreducer";
 import Login from "./components/Login";
@@ -13,7 +12,7 @@ import EditProfile from "./components/EditProfile";
 import Body from "./layout/Body";
 import AddPost from "./components/Post/AddPost";
 import PostDetail from "./components/Post/PostDetail";
-
+import { ConfirmProvider } from 'material-ui-confirm';
 
 
 
@@ -26,29 +25,33 @@ function App() {
   return (
     <BrowserRouter>
       <userContext.Provider value={[user,dispatch]}>
-      
-        <Header/>
-        
-        <Routes>
-            <Route path="/" element={<Body/>}/>
-            <Route path="/posts/:postID" element={<PostDetail/>}/>
-            <Route path="/categories" element={<Category/>}/>
+        <ConfirmProvider>
+          
+          <Header/>
+          
+
+          <Routes>
+              <Route path="/" element={<Body/>}/>
+              <Route path="/posts/:postID" element={<PostDetail/>}/>
 
 
-            <Route path="/login"  element={<Login/>}/>
-            <Route path="/register" element={<Register/>}/>
+              <Route path="/login"  element={<Login/>}/>
+              <Route path="/register" element={<Register/>}/>
 
-            <Route path="/profile" element={<Profile/>}>
-              <Route path='edit-profile' element={<EditProfile/>}/>
-            </Route>
+              <Route path="/profile" element={<Profile/>}>
+                <Route path='edit-profile' element={<EditProfile/>}/>
+              </Route>
 
-            <Route path="/add-post" element={<AddPost/>}/>
-            <Route path="/aboutus" element={<AboutUs/>}/>
-            <Route path="/inbox" element={<Message/>}/>
+              <Route path="/add-post" element={<AddPost/>}/>
+              <Route path="/aboutus" element={<AboutUs/>}/>
+              <Route path="/inbox" element={<Message/>}/>
 
-        </Routes>
-        <Footer/>
+          </Routes>
 
+
+          <Footer/>
+
+        </ConfirmProvider>
       </userContext.Provider>
    
     </BrowserRouter>

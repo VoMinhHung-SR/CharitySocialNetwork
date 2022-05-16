@@ -24,9 +24,9 @@ const Home = () =>{
     let temp = 8
     if (user != null ){
         sideBar = <>
-        <Grid item xs={4}>
+        <Grid item xs={4} sx={{}}>
             <Item style={{"margin":"10px", "display":"flex","justifyContent":"center"}}>
-                <Avatar src={user.avatar}></Avatar>
+                <Avatar src={user.avatar_path}></Avatar>
                 <p style={{"padding":"10px", "justifyContent":"center", "margin":"0"}}>{user.username}</p>
             </Item>
             <Item style={{"margin":"10px"}}>

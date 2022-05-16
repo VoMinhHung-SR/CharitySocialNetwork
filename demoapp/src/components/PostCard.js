@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     Avatar, Card, CardHeader, CardMedia, CardContent, CardActions, Collapse,
     Menu, MenuItem
@@ -15,10 +15,14 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ReportIcon from '@mui/icons-material/Report';
+import InfoIcon from '@mui/icons-material/Info';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { userContext } from '../App';
 import { Link } from 'react-router-dom';
 import Moment from 'react-moment';
+import { authApi, endpoints } from '../configs/APIs';
+import { useConfirm } from 'material-ui-confirm';
+import { Box } from '@mui/system';
 
 
 const ExpandMore = styled((props) => {
@@ -37,13 +41,18 @@ const ExpandMore = styled((props) => {
 
 
 const PostCard = (props) => {
-    const [expanded, setExpanded] = React.useState(false);
 
+    const [user] = useContext(userContext)
+    const confirm = useConfirm();
+
+
+
+    const [expanded, setExpanded] = React.useState(false);
     const handleExpandClick = () => {
         setExpanded(!expanded);
     };
 
-    const [user] = useContext(userContext)
+
 
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
@@ -54,8 +63,8 @@ const PostCard = (props) => {
         setAnchorEl(null);
     };
 
+    // handleAction
     const [active, setActive] = React.useState("More Description..")
-
 
     let act = <>
         <div style={{ "display": "flex", "textAlign": "center", "width": "100%" }}>
@@ -65,24 +74,42 @@ const PostCard = (props) => {
     </>
 
 
-    if (user != null)
+    // set LikeStatus
+    const [liked, setLiked] = useState(props.like)
+    let likeStatus = "default";
+
+    const addLike = async () => {
+        const res = await authApi().post(endpoints['like-post'](props.id))
+        console.info(res)
+        if (res.status === 200)
+            setLiked(res.data.like)
+    }
+
+    if (liked === true) {
+        likeStatus = "error"
+    }
+
+    const postDetail = `/posts/${props.id}/`
+
+    if (user !== null && user !== undefined) {
+
         act = <>
             <IconButton aria-label="add to favorites">
-                <FavoriteIcon />
+                <FavoriteIcon color={likeStatus} onClick={addLike} />
             </IconButton>
 
-            <IconButton aria-label="add comment"
-                onClick={() => { setActive("Comment"); handleExpandClick() }}>
-                <CommentIcon />
-            </IconButton>
+            <Link to={postDetail}>
+                <IconButton aria-label="add comment">
+                    <CommentIcon />
+                </IconButton>
+            </Link>
 
-            <IconButton aria-label="aution"
-                onClick={() => {
-                    setActive("Auction");
-                    handleExpandClick();
-                }}>
-                <MonetizationOnIcon />
-            </IconButton>
+            <Link to={postDetail}>
+                <IconButton aria-label="aution">
+                    <MonetizationOnIcon />
+                </IconButton>
+            </Link>
+
 
 
             <IconButton aria-label="share">
@@ -94,32 +121,78 @@ const PostCard = (props) => {
             </ExpandMore>
         </>
 
+    }
+    const onClickDeletePost = () => {
+        const deletePost = async () => {
+            try {
+                const res = await authApi().delete(
+                    endpoints["delete-post"](props.id)
+                );
+                console.log(res.data)
+                if (res.status === 204) {
+                    props.clickDeletePost();
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        confirm({
+            title: "Bạn có chắc chắn muốn xóa bài viết này không?",
+            description: "Bình viết này sẽ được xóa vĩnh viễn",
+            confirmationText: "Có",
+            cancellationText: "Không",
+        })
+            .then(() => deletePost())
+            .catch((err) => console.error(err));
+    }
+
     let path = `posts/${props.id}/`
+
+    const author = props.authorID;
+    let menuItem = <Box>
+        <Link to={postDetail} style={{"textDecoration":"none", "color":"black"}}>
+            <MenuItem onClick={handleClose} >
+                <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
+            </MenuItem>
+        </Link>
+        <MenuItem onClick={handleClose} >
+            <CancelIcon style={{ "paddingRight": "5px" }} /> Hủy
+        </MenuItem>
+    </Box>
+    if (user && user.id === author)
+        menuItem =
+            <Box>
+                <MenuItem onClick={handleClose} >
+                    <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
+                </MenuItem>
+                <MenuItem onClick={() => {
+                    handleClose();
+                    onClickDeletePost();
+                }}>
+
+                    <DeleteIcon style={{ "paddingRight": "5px" }} /> Xóa bài viết
+                </MenuItem>
+                <MenuItem onClick={handleClose} >
+                    <CancelIcon style={{ "paddingRight": "5px" }} /> Hủy
+                </MenuItem>
+            </Box>
+
+
 
     return (
         <>
 
             <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'basic-button',
-                }}
-            >
-                <MenuItem onClick={handleClose} >
-                    <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
-                </MenuItem>
-                <MenuItem onClick={handleClose}>
-                    <DeleteIcon style={{ "paddingRight": "5px" }} /> Xóa bài viết
-                </MenuItem>
-                <MenuItem onClick={handleClose}>
-                    <ReportIcon style={{ "paddingRight": "5px" }} /> Báo cáo bài viết
-                </MenuItem>
+                MenuListProps={{'aria-labelledby': 'basic-button'}}>
+                {menuItem}
             </Menu>
 
             <Stack spacing={2} style={{ "backgroundColor": "#f3f3f3" }}>
                 <Card sx={8} id={props.key} style={{ "marginBottom": "20px" }}>
                     <CardHeader
                         avatar={
-                            <Avatar src={props.avatar} alt={props.authorUserName}/>
+                            <Avatar src={props.avatar} alt={props.authorUserName} />
                         }
                         action={
                             <IconButton aria-label="settings"
@@ -132,8 +205,9 @@ const PostCard = (props) => {
                             </IconButton>
                         }
                         title={props.title}
-                        subheader= {<Moment fromNow>{props.createdDate}</Moment>}
+                        subheader={<Moment fromNow>{props.createdDate}</Moment>}
                     />
+
                     <Link to={path}>
                         <CardMedia
                             component="img"
@@ -150,6 +224,9 @@ const PostCard = (props) => {
                         <Typography variant="body2" color="text.secondary">
                             Hashtags: {props.tags}
                         </Typography>
+                        <Typography className='text-center' sx={{ fontSize: 14 }} color="text.secondary">
+                            written by: <strong>{props.authorUserName}</strong>
+                        </Typography>
                     </CardContent>
                     <CardActions disableSpacing>
                         {act}
@@ -158,6 +235,7 @@ const PostCard = (props) => {
                         <CardContent>
                             {active}
                         </CardContent>
+
                     </Collapse>
                 </Card>
             </Stack>

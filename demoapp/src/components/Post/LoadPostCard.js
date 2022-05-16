@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useSearchParams } from "react-router-dom";
 import { Box, Pagination, Skeleton, Stack } from '@mui/material'
-import APIs, { endpoints } from '../../configs/APIs'
+import APIs, { authApi, endpoints } from '../../configs/APIs'
 import PostCard from '../PostCard';
+import { userContext } from '../../App';
 
 
 
@@ -20,7 +21,16 @@ const LoadPostCard = () => {
         setPage(value);
     };
     // ====== FetchAPI ======
+
+    const [flag, setFlag] = useState(false)
+    const handleChangeFlag = () => {
+        setFlag(!flag)
+    }
+
     const [posts, setPosts] = useState([])
+    const [user] = useContext(userContext);
+
+
 
     useEffect(() => {
         const loadPosts = async () => {
@@ -29,11 +39,17 @@ const LoadPostCard = () => {
 
                 query === "" ? (query += `page=${page}`) : (query += `&page=${page}`);
                 console.info("query: " + query);
+                let res;
+                if (user !== null && user !== undefined) {
+                    res = await authApi().get(`${endpoints['posts']}?${query}`);
+                } else {
+                    res = await APIs.get(`${endpoints['posts']}?${query}`);
+                }
 
-                let res = await APIs.get(`${endpoints['posts']}?${query}`);
                 const data = await res.data;
                 setPosts(data.results);
-                // console.log(data.results);
+
+                console.log(data.results);
                 setPagination({
                     count: data.count,
                     sizeNumber: Math.ceil(data.count / 2),
@@ -48,31 +64,36 @@ const LoadPostCard = () => {
 
         loadPosts()
 
-    }, [q, page])
+    }, [q, page, flag])
 
     return (
         <>
             {isLoadingPosts && posts.length === 0 ? (
-                <>
+                <Box>
                     <Skeleton variant="text" />
                     <Skeleton variant="circular" width={40} height={40} />
                     <Skeleton variant="rectangular" width={210} height={118} />
-                </>
+                </Box>
 
             ) : posts.length === 0 ? (
                 <h1>Không tìm thấy bài viết</h1>
             ) : (
                 posts.map((post) => (
                     <PostCard
-                        id= {post.id}
+                        id={post.id}
                         key={post.id}
                         title={post.title}
-                        image={post.image}
+                        image={post.image_path}
                         description={post.description}
                         tags={post.tags.map(t => <span>#{t.name} </span>)}
                         createdDate={post.created_date}
                         avatar={post.author.avatar}
                         authorUserName={post.author.username}
+                        // like status
+                        authorID={post.author.id}
+                        like={post.like}
+                        // click delete post
+                        clickDeletePost={handleChangeFlag}
                     />
                 ))
             )}

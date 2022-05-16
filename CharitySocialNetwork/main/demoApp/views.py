@@ -134,7 +134,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         if self.action in ['add_comment', 'like',
                            'auction', 'sharing',
                            'show_post', 'hide_post',
-                           'add_post']:
+                           'add_post', 'get_auth_posts']:
             return [permissions.IsAuthenticated()]
         if self.action in ['destroy', 'update',
                            'partial_update', 'add_tags']:
@@ -143,27 +143,28 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
 
     @action(methods=['post'], detail=False, url_path='add-post')
     def add_post(self, request):
-        try:
+        # try:
             user = request.user
             description = request.data.get('description')
             title = request.data.get('title')
-            image = request.data.get('image')
+            image = request.FILES.get('image')
+            print(image)
             tags = request.data.get('tags')
-        except:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
+        # except:
+        #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # else:
+            post = Post.objects.create(author=user, title=title,
+                                       description=description,
+                                       image=image)
             if tags is not None:
-                post = Post.objects.create(author=user, title=title,
-                                           description=description,
-                                           image=image)
                 for tag in tags:
                     tag_obj, _ = Tag.objects.get_or_create(name=tag)
                     post.tags.add(tag_obj)
 
                 post.save()
-                return Response(PostSerializer(post, context={'request': request}).data,
-                                status=status.HTTP_201_CREATED)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(PostSerializer(post, context={'request': request}).data,
+                            status=status.HTTP_201_CREATED)
 
     @action(methods=['post'], detail=True, url_path='tags')
     def add_tags(self, request, pk):
@@ -241,9 +242,9 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         except IndexError | ValueError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
-            act, _ = Auction.objects.update_or_create(price=price,
-                                                      user=request.user,
-                                                      post=self.get_object())
+            act, _ = Auction.objects.update_or_create(user=request.user,
+                                                      post=self.get_object(),
+                                                      defaults={"price": price})
 
             return Response(AuctionSerializer(act).data,
                             status=status.HTTP_200_OK)
@@ -304,6 +305,12 @@ class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView,
     serializer_class = CommentSerializer
     permission_classes = permissions.IsAuthenticated()
     parser_classes = [MultiPartParser, ]
+
+    def get_parsers(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return []
+
+        return super().get_parsers()
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:

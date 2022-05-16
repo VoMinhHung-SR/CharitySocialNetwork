@@ -8,7 +8,12 @@ export let endpoints = {
     'post-owner':(userID) => `/users/${userID}/post-owner/`,
     'current-user':'/users/current-user/',
     'comments': (postID) => `/posts/${postID}/comments/`,
-    'add-comment':(postID) => `/posts/${postID}/add-comment/`
+    'like-post': (postID)=> `/posts/${postID}/like/`,
+    'add-comment':(postID) => `/posts/${postID}/add-comment/`,
+    'comment': (commentID) => `/comments/${commentID}/`,
+    'add-post': '/posts/add-post/',
+    'delete-post': (postID) => `/posts/${postID}/`,
+    'register': '/users/',
 }
 export const authApi = () => {
     return axios.create({

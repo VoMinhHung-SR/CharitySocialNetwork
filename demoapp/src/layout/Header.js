@@ -66,7 +66,7 @@ const Header = () => {
 
     </>
 
-    if (user != null)
+    if (user!== undefined && user !== null)
         btn = <>
             <Menu anchorEl={anchorEl} id="account-menu" open={open} onClose={handleClose} onClick={handleClose}
                 PaperProps={{
@@ -99,7 +99,7 @@ const Header = () => {
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
                 <Link to="/profile" className="nav-link" style={{ "padding": "0px" }}>
                     <MenuItem style={{ "color": "#333" }}>
-                        <Avatar src={user.avatar} /> Trang cá nhân
+                        <Avatar src={user.avatar_path} /> Trang cá nhân
                     </MenuItem>
                 </Link>
                 <Divider />
@@ -164,7 +164,7 @@ const Header = () => {
                 aria-controls={open ? 'account-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}>
-                <Avatar sx={{ width: 32, height: 32 }} src={user.avatar}></Avatar>
+                <Avatar sx={{ width: 32, height: 32 }} src={user.avatar_path}></Avatar>
             </IconButton>
             {/* End nav menu */}
         </>
