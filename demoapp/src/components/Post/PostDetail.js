@@ -4,7 +4,7 @@ import {
     CardHeader, CardMedia, CardContent, CardActions, Collapse,
     Divider, FormControl, Grid, InputAdornment, InputLabel, Menu, MenuItem, OutlinedInput
 } from '@mui/material'
-
+import { useConfirm } from 'material-ui-confirm';
 import CommentIcon from '@mui/icons-material/Comment';
 import IconButton from '@mui/material/IconButton';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -29,6 +29,11 @@ import Moment from 'react-moment';
 import { Form } from 'react-bootstrap';
 import { Box } from '@mui/system';
 
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from "yup";
+
+
 const ExpandMore = styled((props) => {
 
     const { expand, ...other } = props;
@@ -43,8 +48,32 @@ const ExpandMore = styled((props) => {
         }),
     }));
 
+const validationSchema = Yup.object().shape({
+    price: Yup.number("Giá trị phải là số").positive("Giá trị phải dương").integer("Giá trị phải là số nguyên").required("Giá trị không được phép trống")
+})
 
 const PostDetail = () => {
+
+    // === Validation ===
+   const { register, handleSubmit, formState:{errors} } = useForm({
+        resolver: yupResolver(validationSchema),
+    }); 
+    const onSubmitAddAuction = (data) => {
+       const addAuction = async () =>{
+           try{
+                const res = await authApi().post(endpoints["add-auction"](postID),{
+                    "price": data.price
+                })
+                if(res.status === 200)
+                    alert("Thêm đấu giá thành công")
+           }catch(err){
+               console.error(err);
+           }
+       }
+
+       addAuction();
+    }
+
 
     const [expanded, setExpanded] = useState(false);
     const handleExpandClick = () => {
@@ -64,12 +93,15 @@ const PostDetail = () => {
     const [user, dispatch] = useContext(userContext);
     const [flag, setFlag] = useState(false)
     const { postID } = useParams();
+    const confirm = useConfirm();
     const nav = useNavigate();
     const go = () => nav("/");
     // ====== Fetch API ======
-
+    const handleChangeFlag = () => {
+        setFlag(!flag)
+    }
     const [post, setPost] = useState(null);
-   
+
     const [authorId, setAuthorId] = useState("")
     const [content, setContent] = useState();
     const [comments, setComments] = useState([]);
@@ -87,6 +119,7 @@ const PostDetail = () => {
         if (res.status === 200)
             setLiked(res.data.like);
     }
+
 
 
     useEffect(() => {
@@ -119,6 +152,9 @@ const PostDetail = () => {
         loadPost();
     }, [flag])
 
+
+
+    // === COMMENT ===
     const addComment = async (event) => {
         event.preventDefault();
 
@@ -135,7 +171,7 @@ const PostDetail = () => {
     }
 
 
-    //  sumbmit Form add comment
+    //  sumbmit Form add comment - auction
     function addCommentForm() {
         return (
             <>
@@ -162,10 +198,78 @@ const PostDetail = () => {
         )
     }
 
-    const handleChangeFlag = () => {
-        setFlag(!flag)
+    function addAuctionForm() {
+        return (
+            <Form onSubmit={handleSubmit(onSubmitAddAuction)}>
+                <FormControl fullWidth>
+                    <InputLabel htmlFor="outlined-adornment-amount">Nhập vào giá tiền</InputLabel>
+                    <OutlinedInput
+                        id="outlined-adornment-amount"
+                        // value={}
+                        {...register("price")}
+                        name="price"
+                        startAdornment={<InputAdornment position="start">VNĐ</InputAdornment>}
+                        label="Nhập vào giá tiền"
+                        endAdornment={
+                            <IconButton position="start" type='submit'>
+                                <SendIcon />
+                            </IconButton>
+                        }
+                    />
+                    <p>{errors.price? errors.price.message : "" }</p>
+                </FormControl>
+            </Form>
+        )
+    }
+    // === SHARING ===
+    const onClickSharing = () => {
+        const sharingPost = async () => {
+            try {
+                const res = await authApi().post(endpoints['sharing'](postID))
+                console.log(res.data)
+                if (res.status === 200) {
+                    alert("chia sẽ thành công");
+                }
+            } catch (err) {
+                console.error(err)
+            }
+        };
+        confirm({
+            title: "Bạn có muốn chia sẻ bài viết này không?",
+            description: "Bài viết sẽ được chia sẽ vào trang cá nhân của bạn",
+            confirmationText: "Có",
+            cancellationText: "Không",
+        })
+            .then(() => sharingPost())
+            .catch((err) => console.error(err));
     }
 
+
+    const onClickDeletePost = () => {
+        const deletePost = async () => {
+            try {
+                const res = await authApi().delete(
+                    endpoints["delete-post"](postID)
+                );
+                console.log(res.data)
+                if (res.status === 204) {
+                    alert("xóa thành công");
+                    go();
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        confirm({
+            title: "Bạn có chắc chắn muốn xóa bài viết này không?",
+            description: "Bình viết này sẽ được xóa vĩnh viễn",
+            confirmationText: "Có",
+            cancellationText: "Không",
+        })
+            .then(() => deletePost())
+            .catch((err) => console.error(err));
+    }
 
 
     let act = <>
@@ -181,36 +285,36 @@ const PostDetail = () => {
             <LoginIcon style={{ "paddingRight": "5px" }} /> Đăng nhập
         </MenuItem>
     </Box>
-    if (user){
+    if (user) {
         menuItem =
             <Box>
-                <MenuItem onClick={handleClose} >
-                    <ShareIcon style={{ "paddingRight": "5px" }} /> Chia sẽ 
+                <MenuItem onClick={() => { handleClose(); onClickSharing() }} >
+                    <ShareIcon style={{ "paddingRight": "5px" }} /> Chia sẽ
                 </MenuItem>
                 <MenuItem onClick={handleClose} >
                     <CancelIcon style={{ "paddingRight": "5px" }} /> Hủy
                 </MenuItem>
             </Box>
-        if (user.id === authorId){
+        if (user.id === authorId) {
             menuItem =
-            <Box>
-                <MenuItem onClick={handleClose} >
-                    <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
-                </MenuItem>
-                <MenuItem onClick={() => {
-                    handleClose();
-                }}>
-    
-                    <DeleteIcon style={{ "paddingRight": "5px" }} /> Xóa bài viết
-                </MenuItem>
-                <MenuItem onClick={handleClose} >
-                    <CancelIcon style={{ "paddingRight": "5px" }} /> Hủy
-                </MenuItem>
-            </Box>
+                <Box>
+                    <MenuItem onClick={handleClose} >
+                        <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
+                    </MenuItem>
+                    <MenuItem onClick={() => {
+                        handleClose();
+                        onClickDeletePost();
+                    }}>
+                        <DeleteIcon style={{ "paddingRight": "5px" }} /> Xóa bài viết
+                    </MenuItem>
+                    <MenuItem onClick={handleClose} >
+                        <CancelIcon style={{ "paddingRight": "5px" }} /> Hủy
+                    </MenuItem>
+                </Box>
         }
-       
+
     }
-        
+
 
     if (user !== null && user !== undefined)
         act = <>
@@ -235,7 +339,7 @@ const PostDetail = () => {
             </IconButton>
 
 
-            <IconButton aria-label="share">
+            <IconButton aria-label="share" onClick={onClickSharing}>
                 <ShareIcon />
             </IconButton>
 
@@ -278,7 +382,8 @@ const PostDetail = () => {
                                 avatar={
                                     <Avatar src={post.author.avatar}></Avatar>
                                 }
-                                action={<IconButton aria-label="settings"
+                                action={<IconButton
+                                    aria-label="settings"
                                     aria-controls={open ? 'basic-menu' : undefined}
                                     aria-haspopup="true"
                                     aria-expanded={open ? 'true' : undefined}
@@ -319,7 +424,7 @@ const PostDetail = () => {
                                     <div className='text-center'>{active}</div>
                                     <Divider style={{ "margin": "5px 0px 20px 0px" }} />
                                     {active === "Comment" && addCommentForm()}
-                                    {active === "Auction" && addAution()}
+                                    {active === "Auction" && addAuctionForm()}
                                 </CardContent>
                             </Collapse>
 
@@ -333,7 +438,7 @@ const PostDetail = () => {
                                         username={comment.user.username}
                                         content={comment.content}
                                         created_date={comment.created_date}
-                                        clickDeleteComment={handleChangeFlag}
+                                        clickCommentAction={handleChangeFlag}
                                     />
 
                                 )
@@ -349,27 +454,6 @@ const PostDetail = () => {
         </>
     )
 }
-function addAution() {
-    return (
-        <>
-            <FormControl fullWidth >
-                <InputLabel htmlFor="outlined-adornment-amount">Nhập vào giá tiền</InputLabel>
-                <OutlinedInput
-                    id="outlined-adornment-amount"
-                    // value={}
-                    startAdornment={<InputAdornment position="start">VNĐ</InputAdornment>}
-                    label="Nhập vào giá tiền"
-                    endAdornment={
-                        <IconButton position="start">
-                            <SendIcon />
-                        </IconButton>
-                    }
-                />
-            </FormControl>
-        </>
-    )
-}
-
 
 
 

@@ -85,7 +85,7 @@ class FriendRequestAdmin(admin.ModelAdmin):
 
 
 class ShareAdmin(admin.ModelAdmin):
-    list_display = ['id', 'description', 'created_date', 'updated_date', 'post', 'user']
+    list_display = ['id', 'created_date', 'updated_date', 'post', 'user']
 
 
 class CommentAdmin(admin.ModelAdmin):

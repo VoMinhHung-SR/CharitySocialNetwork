@@ -70,8 +70,6 @@ class Comment(BaseModel):
 
 
 class Sharing(BaseModel):
-    description = RichTextField()
-    tags = models.ManyToManyField(Tag, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='sharing')
 

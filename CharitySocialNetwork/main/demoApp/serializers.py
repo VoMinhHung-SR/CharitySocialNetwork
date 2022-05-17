@@ -128,11 +128,11 @@ class AuthPostDetailSerializer(PostDetailSerializer):
 
 
 class SharingSerializer(ModelSerializer):
-    tags = TagSerializer(many=True)
+    post = PostSerializer()
 
     class Meta:
         model = Sharing
-        fields = ['id', 'description', 'user', 'post', 'tags']
+        fields = ['id', 'created_date', 'user', 'post']
 
 
 class NotificationSerializer(ModelSerializer):

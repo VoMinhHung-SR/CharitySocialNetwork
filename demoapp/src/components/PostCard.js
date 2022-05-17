@@ -89,39 +89,6 @@ const PostCard = (props) => {
         likeStatus = "error"
     }
 
-    const postDetail = `/posts/${props.id}/`
-
-    if (user !== null && user !== undefined) {
-
-        act = <>
-            <IconButton aria-label="add to favorites">
-                <FavoriteIcon color={likeStatus} onClick={addLike} />
-            </IconButton>
-
-            <Link to={postDetail}>
-                <IconButton aria-label="add comment">
-                    <CommentIcon />
-                </IconButton>
-            </Link>
-
-            <Link to={postDetail}>
-                <IconButton aria-label="aution">
-                    <MonetizationOnIcon />
-                </IconButton>
-            </Link>
-
-
-
-            <IconButton aria-label="share">
-                <ShareIcon />
-            </IconButton>
-
-            <ExpandMore expand={expanded} onClick={handleExpandClick} aria-expanded={expanded} aria-label="show more">
-                <ExpandMoreIcon></ExpandMoreIcon>
-            </ExpandMore>
-        </>
-
-    }
     const onClickDeletePost = () => {
         const deletePost = async () => {
             try {
@@ -147,9 +114,65 @@ const PostCard = (props) => {
             .catch((err) => console.error(err));
     }
 
-    let path = `posts/${props.id}/`
+    const onClickSharing = () =>{
+        const sharingPost = async () =>{
+            try{
+                const res = await authApi().post(endpoints['sharing'](props.id))
+                console.log(res.data)
+                if(res.status === 200){
+                    alert("chia sẽ thành công");
+                }
+            }catch(err){
+                console.error(err)
+            }
+        };
+        confirm({
+            title: "Bạn có muốn chia sẻ bài viết này không?",
+            description: "Bài viết sẽ được chia sẽ vào trang cá nhân của bạn",
+            confirmationText: "Có",
+            cancellationText: "Không",
+        })
+            .then(() => sharingPost())
+            .catch((err) => console.error(err));
+    }
 
+    const postDetail = `/posts/${props.id}/`
     const author = props.authorID;
+
+    if (user !== null && user !== undefined) {
+
+        act = <>
+            <IconButton aria-label="add to favorites">
+                <FavoriteIcon color={likeStatus} onClick={addLike} />
+            </IconButton>
+
+            <Link to={postDetail}>
+                <IconButton aria-label="add comment">
+                    <CommentIcon />
+                </IconButton>
+            </Link>
+
+            <Link to={postDetail}>
+                <IconButton aria-label="aution">
+                    <MonetizationOnIcon />
+                </IconButton>
+            </Link>
+
+
+
+            <IconButton aria-label="share" onClick={onClickSharing}>
+                <ShareIcon />
+            </IconButton>
+
+            <ExpandMore expand={expanded} onClick={handleExpandClick} aria-expanded={expanded} aria-label="show more">
+                <ExpandMoreIcon></ExpandMoreIcon>
+            </ExpandMore>
+        </>
+
+    }
+    
+
+
     let menuItem = <Box>
         <Link to={postDetail} style={{"textDecoration":"none", "color":"black"}}>
             <MenuItem onClick={handleClose} >
@@ -208,7 +231,7 @@ const PostCard = (props) => {
                         subheader={<Moment fromNow>{props.createdDate}</Moment>}
                     />
 
-                    <Link to={path}>
+                    <Link to={postDetail}>
                         <CardMedia
                             component="img"
                             height="600"

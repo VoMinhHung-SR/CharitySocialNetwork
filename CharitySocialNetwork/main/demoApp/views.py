@@ -17,7 +17,7 @@ from rest_framework import permissions
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser
 from rest_framework.parsers import JSONParser
-from .perms import (CommentOwnerPerms, PostOwnerPerms,
+from .perms import (CommentOwnerPerms, PostOwnerPerms, SharingOwnerPerms,
                     OwnerProfilePerms, AuctioneersPerms)
 
 
@@ -104,6 +104,17 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
                                            context={'request': request}).data,
                             status=status.HTTP_200_OK)
 
+    @action(methods=['get'], detail=True, url_path='post-shared')
+    def get_post_shared(self, request, pk):
+        try:
+            posts = Sharing.objects.filter(user=self.get_object()).all().order_by("-id")
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(SharingSerializer(posts, many=True,
+                                              context={'request': request}).data,
+                            status=status.HTTP_200_OK)
+
 
 class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                   generics.RetrieveAPIView, generics.UpdateAPIView,
@@ -144,27 +155,27 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
     @action(methods=['post'], detail=False, url_path='add-post')
     def add_post(self, request):
         # try:
-            user = request.user
-            description = request.data.get('description')
-            title = request.data.get('title')
-            image = request.FILES.get('image')
-            print(image)
-            tags = request.data.get('tags')
+        user = request.user
+        description = request.data.get('description')
+        title = request.data.get('title')
+        image = request.FILES.get('image')
+        print(image)
+        tags = request.data.get('tags')
         # except:
         #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # else:
-            post = Post.objects.create(author=user, title=title,
-                                       description=description,
-                                       image=image)
-            if tags is not None:
-                for tag in tags:
-                    tag_obj, _ = Tag.objects.get_or_create(name=tag)
-                    post.tags.add(tag_obj)
+        post = Post.objects.create(author=user, title=title,
+                                   description=description,
+                                   image=image)
+        if tags is not None:
+            for tag in tags:
+                tag_obj, _ = Tag.objects.get_or_create(name=tag)
+                post.tags.add(tag_obj)
 
-                post.save()
+            post.save()
 
-            return Response(PostSerializer(post, context={'request': request}).data,
-                            status=status.HTTP_201_CREATED)
+        return Response(PostSerializer(post, context={'request': request}).data,
+                        status=status.HTTP_201_CREATED)
 
     @action(methods=['post'], detail=True, url_path='tags')
     def add_tags(self, request, pk):
@@ -256,21 +267,11 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            description = request.data.get('description')
-            tags = request.data.get('tags')
+            people_shared, _ = Sharing.objects.get_or_create(user=request.user,
+                                                             post=post)
 
-            if tags is not None:
-                people_shared, _ = Sharing.objects.get_or_create(description=description,
-                                                                 user=request.user,
-                                                                 post=post)
-                for tag in tags:
-                    tag_obj, _ = Tag.objects.get_or_create(name=tag)
-                    people_shared.tags.add(tag_obj)
-                people_shared.save()
-
-                return Response(SharingSerializer(people_shared).data,
-                                status=status.HTTP_200_OK)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(SharingSerializer(people_shared, context={'request': request}).data,
+                            status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='hide')
     def hide_post(self, request, pk):
@@ -304,7 +305,7 @@ class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView,
     queryset = Comment.objects
     serializer_class = CommentSerializer
     permission_classes = permissions.IsAuthenticated()
-    parser_classes = [MultiPartParser, ]
+    parser_classes = [MultiPartParser, JSONParser]
 
     def get_parsers(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -329,6 +330,17 @@ class AuctionViewSet(viewsets.ViewSet, generics.DestroyAPIView,
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [AuctioneersPerms()]
+
+        return [permissions.IsAuthenticated()]
+
+
+class SharingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
+    queryset = Sharing.objects.filter(active=True)
+    permission_classes = permissions.IsAuthenticated()
+
+    def get_permissions(self):
+        if self.action in ['destroy']:
+            return [SharingOwnerPerms()]
 
         return [permissions.IsAuthenticated()]
 

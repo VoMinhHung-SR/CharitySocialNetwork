@@ -1,14 +1,20 @@
-import { Avatar, Container, Divider, Grid, IconButton, Paper, Stack, Tooltip } from "@mui/material"
+import {
+    Avatar, Container, Grid, IconButton, Paper, Stack,
+    Tooltip, ImageListItem, ImageList, Typography, Box, Tabs, Tab, ImageListItemBar, Menu, MenuItem
+} from "@mui/material"
+import PropTypes from "prop-types";
 import { styled } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
+import InfoIcon from '@mui/icons-material/Info';
 import { Link, Outlet } from "react-router-dom";
 import Moment from "react-moment";
 import { useContext, useEffect, useState } from "react";
 import { userContext } from "../App";
 import { authApi, endpoints } from "../configs/APIs";
 import CircularProgress from '@mui/material/CircularProgress'
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import Cancel from "@mui/icons-material/Cancel";
+
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
     ...theme.typography.body2,
@@ -17,23 +23,76 @@ const Item = styled(Paper)(({ theme }) => ({
     color: theme.palette.text.secondary,
 }));
 
+function TabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            className="text-center"
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+TabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+};
+function a11yProps(index) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
 
 
 const Profile = () => {
-    const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+    const [value, setValue] = useState(0);
+
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
+
+
 
     const [user, dispatch] = useContext(userContext)
     let gender = "";
 
-    
-    // ====== FETCH API ======
+    // Post owner && Post shared
     const [postsOwner, setPostsOwner] = useState([])
+    const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+
+    const [postsShared, setPostsShared] = useState([])
+    const [isLoadingPostsShared, setIsLoadingPostsShared] = useState(true)
+
+    // ====== FETCH API ======
     useEffect(() => {
         const loadPostOwner = async () => {
             try {
                 let res;
                 const userID = user.id;
-                if (user !== null)
+                if (user)
                     res = await authApi().get((endpoints['post-owner'](userID)));
                 setPostsOwner(res.data);
                 setIsLoadingPosts(false);
@@ -43,18 +102,36 @@ const Profile = () => {
             }
 
         }
+        const loadPostShared = async () => {
+            try {
+                let res;
+                const userID = user.id;
+                if (user)
+                    res = await authApi().get((endpoints['post-shared'](userID)));
+                setPostsShared(res.data);
+                setIsLoadingPostsShared(false);
+                console.info(res.data)
+            } catch (err) {
+                console.log(err);
+            }
 
-        loadPostOwner()
+        }
+        loadPostOwner();
+        loadPostShared();
     }, [])
 
-    if (user === null){
-        return(
+
+    if (user === null) {
+        return (
             <>
-                <h1> Bạn phải đăng nhập để xem trang cá nhân</h1>
-                <Link className="nav-link text-primary" to='/login'><h2>CLICK ME</h2></Link>
-            </>  
-        ) 
-    }else
+                <Container className="text-center">
+                    <h4> Bạn phải đăng nhập để xem trang cá nhân</h4>
+                    <Link className="nav-link text-primary" to='/login'><h4>CLICK ME</h4></Link>
+                </Container>
+
+            </>
+        )
+    } else
         if (user.gender !== null) {
             if (user.gender === 0)
                 gender = "Nam";
@@ -63,10 +140,32 @@ const Profile = () => {
             else
                 gender = "Bí mật"
         }
-        
+
+    let menuItem = <Box>
+        <MenuItem onClick={handleClose} >
+            <DeleteForeverIcon style={{ "paddingRight": "5px" }} /> Xóa bài chia sẻ
+        </MenuItem>
+
+
+        <MenuItem  >
+            <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
+        </MenuItem>
+
+
+        <MenuItem onClick={handleClose} >
+            <Cancel style={{ "paddingRight": "5px" }} /> Hủy
+        </MenuItem>
+    </Box>
 
     return (
         <>
+            <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
+                MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                }}
+            >
+                {menuItem}
+            </Menu>
             <div style={{ "width": "100%", "backgroundColor": "#f3f3f3" }}>
                 <Container style={{ "padding": "20px" }}>
                     <Stack spacing={2}>
@@ -119,34 +218,89 @@ const Profile = () => {
                         </Item>
 
                         <Outlet />
-                        <Divider style={{ "marginTop": "150px" }} />
 
 
-                        <div>
-                            {isLoadingPosts && postsOwner.length === 0 ? (
-                                <CircularProgress/>
-                            ) : postsOwner.length === 0 ? (
-                                <h1 className="text-center">Hiện tại người dùng chưa có bài viết nào</h1>
-                            ) : (
-                                <ImageList sx={{ width: 900 }} cols={3} rowHeight={280} style={{ "margin": "0 auto" }}>
-                                    {postsOwner.map((item) => (
-                                        
-                                        <>
-                                            <Link to={`/posts/${item.id}/`}>
-                                                <ImageListItem key={item.image} style={{ "margin": "10px", "border": "solid 3px black" ,"overflow":"hidden"}}>
-                                                    <img
-                                                        src={`${item.image}?w=200&h=200&fit=crop&auto=format`}
-                                                        srcSet={`${item.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                                                        alt={item.title}
-                                                        loading="lazy"
-                                                    />
-                                                </ImageListItem>
-                                            </Link>
-                                        </>
-                                    ))}
-                                </ImageList>
 
-                            )}
+                        <div style={{ "marginTop": "50px" }}>
+                            <Box sx={{ width: '100%' }}>
+                                <Box sx={{ borderBottom: 1, borderColor: 'divider' }} >
+                                    <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" >
+                                        <Tab style={{ "margin": "auto" }} label="Bài viết" {...a11yProps(0)} />
+                                        <Tab style={{ "margin": "auto" }} label="Chia sẻ" {...a11yProps(1)} />
+                                        {/* <Tab label="Item Three" {...a11yProps(2)} /> */}
+                                    </Tabs>
+                                </Box>
+                                <TabPanel value={value} index={0}>
+                                    {isLoadingPosts && postsOwner.length === 0 ? (
+                                        <CircularProgress />
+                                    ) : postsOwner.length === 0 ? (
+                                        <h1 className="text-center">Hiện tại người dùng chưa có bài viết nào</h1>
+                                    ) : (
+                                        <ImageList sx={{ width: 900 }} cols={3} rowHeight={280} style={{ "margin": "0 auto" }}>
+                                            {postsOwner.map((item) => (
+
+                                                <>
+                                                    <Link to={`/posts/${item.id}/`}>
+                                                        <ImageListItem key={item.image} style={{ "margin": "10px", "border": "solid 3px black", "overflow": "hidden" }}>
+                                                            <img
+                                                                src={`${item.image_path}?w=200&h=200&fit=crop&auto=format`}
+                                                                srcSet={`${item.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                                                                alt={item.title}
+                                                                loading="lazy"
+                                                            />
+                                                        </ImageListItem>
+                                                    </Link>
+                                                </>
+                                            ))}
+                                        </ImageList>
+
+                                    )}
+                                </TabPanel>
+                                <TabPanel value={value} index={1}>
+                                    {isLoadingPostsShared && postsShared.length === 0 ? (
+                                        <CircularProgress />
+                                    ) : postsShared.length === 0 ? (
+                                        <h1 className="text-center">Hiện tại người dùng chưa có chia sẻ bài viết nào</h1>
+                                    ) : (
+                                        <ImageList sx={{ width: 900 }} cols={3} rowHeight={280} style={{ "margin": "0 auto" }}>
+                                            {postsShared.map((item) => (
+                                                <>
+                                                    <ImageListItem key={item.post.image} style={{ "margin": "10px", "border": "solid 3px black", "overflow": "hidden" }}>
+                                                        <img
+                                                            src={`${item.post.image_path}?w=200&h=200&fit=crop&auto=format`}
+                                                            srcSet={`${item.post.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                                                            alt={item.post.title}
+                                                        />
+
+                                                        <ImageListItemBar
+                                                            title={item.post.title}
+                                                            subtitle={`writen by: ${item.post.author.username}`}
+                                                            actionIcon={
+                                                                <IconButton
+                                                                    sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                                                                    aria-label={`info about ${item.post.title}`}
+                                                                    aria-controls={open ? 'basic-menu' : undefined}
+                                                                    aria-haspopup="true"
+                                                                    aria-expanded={open ? 'true' : undefined}
+                                                                    onClick={handleClick}
+                                                                >
+                                                                    <InfoIcon />
+                                                                </IconButton>
+                                                            }
+                                                        />
+
+
+                                                    </ImageListItem>
+
+                                                </>
+                                            ))}
+                                        </ImageList>
+                                    )}
+                                </TabPanel>
+                                {/* <TabPanel value={value} index={2}>
+                                    Item Three
+                                </TabPanel> */}
+                            </Box>
                         </div>
 
 

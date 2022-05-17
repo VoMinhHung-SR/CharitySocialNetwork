@@ -10,6 +10,7 @@ router.register("users", views.UserViewSet, basename="user")
 router.register("comments", views.CommentViewSet, basename="comment")
 router.register("auctions", views.AuctionViewSet, basename="auction")
 router.register("tags", views.TagViewSet, basename="tag")
+router.register("sharing", views.SharingViewSet, basename="sharing")
 urlpatterns = [
     path('', include(router.urls)),
     path('oauth2-info/', views.AuthInfo.as_view()),
