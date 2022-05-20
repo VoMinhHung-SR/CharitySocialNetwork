@@ -44,7 +44,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView,
     @action(methods=['get'], detail=True, url_path='notifications')
     def get_notifications(self, request, pk):
         message = Notification.objects.filter(user=request.user)
-        return Response(NotificationSerializer(message, many=True).data,
+        return Response(NotificationSerializer(message, many=True, context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='send-friend-request')
@@ -145,7 +145,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         if self.action in ['add_comment', 'like',
                            'auction', 'sharing',
                            'show_post', 'hide_post',
-                           'add_post', 'get_auth_posts']:
+                           'add_post']:
             return [permissions.IsAuthenticated()]
         if self.action in ['destroy', 'update',
                            'partial_update', 'add_tags']:
@@ -159,7 +159,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         description = request.data.get('description')
         title = request.data.get('title')
         image = request.FILES.get('image')
-        print(image)
+        # print(image.name)
         tags = request.data.get('tags')
         # except:
         #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -167,6 +167,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         post = Post.objects.create(author=user, title=title,
                                    description=description,
                                    image=image)
+
         if tags is not None:
             for tag in tags:
                 tag_obj, _ = Tag.objects.get_or_create(name=tag)
@@ -210,12 +211,14 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         post = self.get_object()
         auctions = post.auctions.select_related('user').filter(active=True)
 
-        return Response(AuctionSerializer(auctions, many=True).data,
+        return Response(AuctionSerializer(auctions, many=True,
+                                          context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='add-comment')
     def add_comment(self, request, pk):
         try:
+            post = self.get_object()
             content = request.data.get('content')
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -223,7 +226,12 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
             if content:
                 c = Comment.objects.create(content=content,
                                            user=request.user,
-                                           post=self.get_object())
+                                           post=post)
+                if request.user != self.get_object().author:
+                    message = "Đã có người bình luận vào bài viết của bạn"
+                    Notification.objects.create(message=message,
+                                                user=post.author,
+                                                post=post)
                 return Response(CommentSerializer(c, context={'request': request}).data,
                                 status=status.HTTP_201_CREATED)
 
@@ -238,6 +246,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
         l.active = not l.active
         try:
             l.save()
+
         except:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -257,7 +266,7 @@ class PostViewSet(viewsets.ViewSet, generics.ListAPIView,
                                                       post=self.get_object(),
                                                       defaults={"price": price})
 
-            return Response(AuctionSerializer(act).data,
+            return Response(AuctionSerializer(act, context={'request': request}).data,
                             status=status.HTTP_200_OK)
 
     @action(methods=['post'], detail=True, url_path='sharing')
@@ -326,6 +335,12 @@ class AuctionViewSet(viewsets.ViewSet, generics.DestroyAPIView,
     serializer_class = AuctionSerializer
     permission_classes = permissions.IsAuthenticated()
     parser_classes = [MultiPartParser, ]
+
+    def get_parsers(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return []
+
+        return super().get_parsers()
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:

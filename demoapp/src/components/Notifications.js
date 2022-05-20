@@ -1,7 +1,12 @@
-import React from "react";
-import { Avatar, Badge, Divider, IconButton, List, ListItem, ListItemAvatar, ListItemText, Menu, Typography } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import { Avatar, Badge, Divider, IconButton, List, ListItem, ListItemAvatar, ListItemText, Menu, Skeleton, Typography } from "@mui/material";
 import { useState } from "react";
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import { authApi, endpoints } from "../configs/APIs";
+import { userContext } from "../App";
+import { Box } from "@mui/system";
+import Moment from "react-moment";
+import { Link } from "react-router-dom";
 
 const Notifications = () => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -12,6 +17,27 @@ const Notifications = () => {
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    const [user, dispatch] = useContext(userContext);
+
+    // ==== FETCH API ====
+    const [notifications, setNotifications] = useState([])
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(true)
+
+    useEffect(() => {
+        const loadNotifications = async () => {
+            try {
+                const res = await authApi().get(endpoints['notifications'](user.id))
+                console.log(res.data)
+                setNotifications(res.data)
+                setIsLoadingNotifications(false)
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadNotifications();
+    }, [])
 
     return (
         <>
@@ -44,9 +70,53 @@ const Notifications = () => {
                 }}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
+                {isLoadingNotifications && notifications.length === 0 ? (
+                    <Box sx={{ width: 300 }}>
+                        <Skeleton />
+                        <Skeleton animation="wave" />
+                        <Skeleton animation={false} />
+                    </Box>
+                ) : notifications.length === 0 ? (
+                    <Box style={{ "padding": "10px" }}>
+                        <Typography className="text-center">Hiện tại người dùng chưa có thông báo</Typography>
+                    </Box>
+                ) : (
+                    <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
+                        {notifications.map((notification) => (
+                            <Box style={{ "cursor": "pointer" }}>
+                                <Link to={`/posts/${notification.post.id}`} style={{'textDecoration':'none', 'color':"#212529"}}>
+                                    <ListItem alignItems="flex-start" key={notification.id}>
+                                        <ListItemAvatar style={{ "margin": "auto" }}>
+                                            <Avatar alt={notification.post.title}
+                                                src={notification.post.image_path} variant="square"
+                                                style={{ "width": "40px", "height": "40px" }} />
+                                        </ListItemAvatar>
+                                        <ListItemText
+                                            primary={notification.post.title}
+                                            secondary={
+                                                <React.Fragment>
+                                                    <Typography
+                                                        sx={{ display: 'inline' }}
+                                                        component="span"
+                                                        variant="body2"
+                                                        color="text.primary"
+                                                    >
+                                                        {notification.message} --
+                                                    </Typography>
+                                                    <i> <Moment fromNow>{notification.created_date}</Moment> </i>
+                                                </React.Fragment>
+                                            }
+                                        />
+                                    </ListItem>
+                                </Link>
+                                <Divider variant="inset" component="li" />
+                            </Box>
+                        ))}
 
+                    </List>
+                )}
                 {/* Show Notification */}
-                <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
+                {/* <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
                     <ListItem alignItems="flex-start">
                         <ListItemAvatar>
                             <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
@@ -69,52 +139,8 @@ const Notifications = () => {
                         />
                     </ListItem>
                     <Divider variant="inset" component="li" />
-                    <ListItem alignItems="flex-start">
-                        <ListItemAvatar>
-                            <Avatar alt="Travis Howard" src="/static/images/avatar/2.jpg" />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary="Summer BBQ"
-                            secondary={
-                                <React.Fragment>
-                                    <Typography
-                                        sx={{ display: 'inline' }}
-                                        component="span"
-                                        variant="body2"
-                                        color="text.primary"
-                                    >
-                                        to Scott, Alex, Jennifer
-                                    </Typography>
-                                    {" — Wish I could come, but I'm out of town this…"}
-                                </React.Fragment>
-                            }
-                        />
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                    <ListItem alignItems="flex-start">
-                        <ListItemAvatar>
-                            <Avatar alt="Cindy Baker" src="/static/images/avatar/3.jpg" />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary="Oui Oui"
-                            secondary={
-                                <React.Fragment>
-                                    <Typography
-                                        sx={{ display: 'inline' }}
-                                        component="span"
-                                        variant="body2"
-                                        color="text.primary"
-                                    >
-                                        Sandra Adams
-                                    </Typography>
-                                    {' — Do you have Paris recommendations? Have you ever…'}
-                                </React.Fragment>
-                            }
-                        />
-                    </ListItem>
-                </List>
+                </List> */}
                 {/* End show */}
-
             </Menu>
             <IconButton size="small" color="inherit" onClick={handleClick}>
                 <Badge badgeContent={4} color="error">

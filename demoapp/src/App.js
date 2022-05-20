@@ -13,14 +13,16 @@ import Body from "./layout/Body";
 import AddPost from "./components/Post/AddPost";
 import PostDetail from "./components/Post/PostDetail";
 import { ConfirmProvider } from 'material-ui-confirm';
-
+import cookies from "react-cookies";
 
 
 export const userContext = createContext()
 
 function App() {
   
-  const [user, dispatch] = useReducer(myReducer)
+  // Giữ phiên làm việc vs cookies current user 
+  const [user, dispatch] = useReducer(myReducer, cookies.load('user'))
+  
   
   return (
     <BrowserRouter>

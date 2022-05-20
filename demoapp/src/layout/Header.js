@@ -16,6 +16,8 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
 import Notifications from "../components/Notifications";
+import cookies from "react-cookies";
+
 
 const Header = () => {
 
@@ -45,6 +47,10 @@ const Header = () => {
 
     const logout = (evt) => {
         evt.preventDefault()
+        // Xóa cookies current user
+        cookies.remove('token')
+        cookies.remove('user')
+
         if (user != null)
             dispatch({
                 "type": "logout",

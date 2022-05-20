@@ -3,11 +3,19 @@
 <div style="width:100%;">
     <h1 style="text-align:center">THỐNG KÊ SỐ BÀI VIẾT</h1>
     <h4>Số lượng bài viết: <span style="color:red">{{count}}</span></h4>
-    <ul>
+    <ul style="list-style:none">
         {% for s in stats %}
-        <li> {{ s.id }} . {{ s.title }}: {{ s.lesson_count }}</li>
-        <li> + Số lượt like của bài viết này là: {{s.post_like_count}}</li>
-        <li> + Số lượt bình luận của bài viết này là: {{s.post_comment_count}}</li>
+        <li> {{ s.id }} . Tiêu đề: <span style="color:red">{{ s.title }}</span></li>
+        <li style="padding-left:20px"> + Số lượt like của bài viết này là: {{s.post_like_count}}</li>
+            {% for comment in comments%}
+                {% if s.id == comment.id%}
+                    {% if comment.post_comment_count == 0%}
+                        <li style="padding-left:20px"> Bài viết hiện tại chưa có bình luận</li>
+                    {% else %}
+                        <li style="padding-left:20px"> + Số lượt bình luận của bài viết này là: {{comment.post_comment_count}}</li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
         {% endfor %}
     </ul>
 </div>

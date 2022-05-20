@@ -22,13 +22,13 @@ class DemoAppAdminSite(admin.AdminSite):
 
     def stats_view(self, request):
         post = Post.objects.filter(active=True).count()
-        stats = Post.objects.annotate(post_like_count=Count('actions'), post_comment_count=Count('comments'))\
-            .values('id', 'title', 'post_like_count', 'post_comment_count')
+        stats = Post.objects.annotate(post_like_count=Count('actions')).values('id', 'title', 'post_like_count')
+        comments = Post.objects.annotate(post_comment_count=Count('comments')).values('id', 'post_comment_count')
         return TemplateResponse(request,
                                 'admin/post-stats.html', {
                                     'count': post,
                                     # 'likes': likes,
-                                    # 'comments': comments
+                                    'comments': comments,
                                     'stats': stats
                                 })
 

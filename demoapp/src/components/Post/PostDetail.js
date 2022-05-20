@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import Avatar from '@mui/material/Avatar';
 import {
     CardHeader, CardMedia, CardContent, CardActions, Collapse,
-    Divider, FormControl, Grid, InputAdornment, InputLabel, Menu, MenuItem, OutlinedInput
+    Divider, FormControl, Grid, InputAdornment, InputLabel, Menu, MenuItem, 
+    OutlinedInput, ListItem, ListItemAvatar, List, ListItemText, CircularProgress, Container
 } from '@mui/material'
 import { useConfirm } from 'material-ui-confirm';
 import CommentIcon from '@mui/icons-material/Comment';
@@ -21,13 +22,17 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CloseIcon from '@mui/icons-material/Close';
 import LoginIcon from '@mui/icons-material/Login';
+
 import { userContext } from '../../App';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Comments from '../Comments';
-import APIs, { authApi, endpoints } from '../../configs/APIs'
+import PopupDialog from '../controls/PopUpDialog';
+import UpdateForm from './UpdateForm';
+import APIs, { authApi, endpoints } from '../../configs/APIs';
 import Moment from 'react-moment';
 import { Form } from 'react-bootstrap';
 import { Box } from '@mui/system';
+
 
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -49,29 +54,34 @@ const ExpandMore = styled((props) => {
     }));
 
 const validationSchema = Yup.object().shape({
-    price: Yup.number("Giá trị phải là số").positive("Giá trị phải dương").integer("Giá trị phải là số nguyên").required("Giá trị không được phép trống")
+    price: Yup.number().positive("Giá trị phải dương").typeError("Giá trị phải là số")
+        .integer("Giá trị phải là số nguyên").required("Giá trị không được phép trống")
 })
 
-const PostDetail = () => {
 
+const PostDetail = () => {
+    //  === Popup Dialog ===
+    const [openPopup, setOpenPopup] = useState(false)
     // === Validation ===
-   const { register, handleSubmit, formState:{errors} } = useForm({
+    const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema),
-    }); 
+    });
     const onSubmitAddAuction = (data) => {
-       const addAuction = async () =>{
-           try{
-                const res = await authApi().post(endpoints["add-auction"](postID),{
+        const addAuction = async () => {
+            try {
+                const res = await authApi().post(endpoints["add-auction"](postID), {
                     "price": data.price
                 })
-                if(res.status === 200)
+                if (res.status === 200) {
                     alert("Thêm đấu giá thành công")
-           }catch(err){
-               console.error(err);
-           }
-       }
+                    setFlag(!flag);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
 
-       addAuction();
+        addAuction();
     }
 
 
@@ -100,11 +110,20 @@ const PostDetail = () => {
     const handleChangeFlag = () => {
         setFlag(!flag)
     }
+
+
     const [post, setPost] = useState(null);
 
+    
     const [authorId, setAuthorId] = useState("")
+
+
     const [content, setContent] = useState();
     const [comments, setComments] = useState([]);
+
+
+    const [auctioneers, setAuctioneers] = useState([])
+    const [isLoadingAuctioneers, setIsLoadingAuctioneers] = useState(true)
 
     const [liked, setLiked] = useState(false)
     let likeStatus = "default";
@@ -148,8 +167,19 @@ const PostDetail = () => {
                 console.log(err);
             }
         }
-        loadComments()
+        const loadAuctioneers = async () => {
+            try {
+                const res = await APIs.get(endpoints['auctions'](postID));
+                setAuctioneers(res.data);
+                console.log(res.data);
+                setIsLoadingAuctioneers(false);
+            } catch (err) {
+                console.log(err);
+            }
+        }
         loadPost();
+        loadComments();
+        loadAuctioneers();
     }, [flag])
 
 
@@ -216,7 +246,7 @@ const PostDetail = () => {
                             </IconButton>
                         }
                     />
-                    <p>{errors.price? errors.price.message : "" }</p>
+                    <p>{errors.price ? errors.price.message : ""}</p>
                 </FormControl>
             </Form>
         )
@@ -244,7 +274,7 @@ const PostDetail = () => {
             .catch((err) => console.error(err));
     }
 
-
+    // === DELET POST ===
     const onClickDeletePost = () => {
         const deletePost = async () => {
             try {
@@ -280,6 +310,7 @@ const PostDetail = () => {
     </>
 
 
+
     let menuItem = <Box>
         <MenuItem onClick={handleClose} >
             <LoginIcon style={{ "paddingRight": "5px" }} /> Đăng nhập
@@ -298,7 +329,10 @@ const PostDetail = () => {
         if (user.id === authorId) {
             menuItem =
                 <Box>
-                    <MenuItem onClick={handleClose} >
+                    <MenuItem onClick={()=>{
+                        handleClose();
+                        setOpenPopup(true);
+                    }}>
                         <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
                     </MenuItem>
                     <MenuItem onClick={() => {
@@ -347,12 +381,68 @@ const PostDetail = () => {
                 <ExpandMoreIcon></ExpandMoreIcon>
             </ExpandMore>
         </>
+
+
+    // Is author or auctioneers
+    let auctionButton = addAuctionForm();
+    if (user && user.id === authorId) {
+        auctionButton = <Box>
+            {isLoadingAuctioneers && auctioneers.length === 0 ? (
+                <Box sx={{ display: 'flex' }}>
+                    <CircularProgress />
+                </Box>
+            ) : auctioneers.length === 0 ? (
+                <p className='text-center'>Sản phẩm chưa có người dùng đấu giá</p>
+            ) : (
+                auctioneers.map((item) => {
+                    return (
+                        <Box key={item.id}>
+                            <Divider style={{ "width": "95%", "margin": "auto" }} />
+                            <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
+                                <ListItem alignItems="flex-start">
+                                    <ListItemAvatar>
+                                        <Avatar alt="" src={item.user.avatar} />
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        primary={item.user.username}
+                                        secondary={
+                                            <React.Fragment>
+                                                <Typography
+                                                    sx={{ display: 'inline' }}
+                                                    component="span"
+                                                    variant="body2"
+                                                    color="text.primary"
+                                                >
+                                                    price : {item.price.toLocaleString('it-IT', { styled: 'currency', currency: 'VND' })} VNĐ
+                                                </Typography>
+                                            </React.Fragment>
+                                        }
+                                    />
+                                </ListItem>
+                            </List>
+                        </Box>
+                    )
+                })
+            )}
+
+        </Box>
+    }
+
+
     if (post === null) {
-        return <h1>Loading</h1>
+        return (
+            <Box>
+                <Container>
+                    <CircularProgress />
+                </Container>
+            </Box>
+            
+        )
     }
 
     return (
         <>
+            {/* Backgound Render */}
             <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
                 MenuListProps={{
                     'aria-labelledby': 'basic-button',
@@ -360,7 +450,10 @@ const PostDetail = () => {
             >
                 {menuItem}
             </Menu>
-
+            <PopupDialog openPopup={openPopup} setOpenPopup={setOpenPopup} title="Chỉnh sửa bài viết">
+                <UpdateForm title={post.title} description={post.description} 
+                image={post.image_path} hashtags={post.tags}/>
+            </PopupDialog>
 
             {/* Main */}
             <div style={{ "backgroundColor": "rgba(0,0,0,.65)", "width": "100%" }}>
@@ -424,7 +517,7 @@ const PostDetail = () => {
                                     <div className='text-center'>{active}</div>
                                     <Divider style={{ "margin": "5px 0px 20px 0px" }} />
                                     {active === "Comment" && addCommentForm()}
-                                    {active === "Auction" && addAuctionForm()}
+                                    {active === "Auction" && auctionButton}
                                 </CardContent>
                             </Collapse>
 

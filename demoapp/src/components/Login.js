@@ -3,7 +3,7 @@ import { Container, Form, Button } from "react-bootstrap"
 import React from "react"
 import { userContext } from "../App"
 import APIs, { authApi, endpoints } from "../configs/APIs"
-import cookie from "react-cookies"
+import cookies from "react-cookies"
 import { Navigate } from "react-router-dom"
 
 const Login = () => {
@@ -25,10 +25,12 @@ const Login = () => {
 
         // luu trong cookies
         console.info(res.data)
-        cookie.save('token', res.data.access_token)
+        cookies.save('token', res.data.access_token)
 
         // info current user
         const user = await authApi().get(endpoints['current-user'])
+        cookies.save('user', user.data)
+        
         console.info(user.data)
         dispatch({
             'type': 'login',

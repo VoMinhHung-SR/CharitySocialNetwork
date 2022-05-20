@@ -1,21 +1,32 @@
 import { Container, Button, Box, TextField, Input } from "@mui/material"
 import { useState, useEffect } from "react";
 import { Form } from "react-bootstrap";
-import { authApi, authMediaApi, endpoints } from "../../configs/APIs";
+import { authApi, endpoints } from "../../configs/APIs";
 import { useNavigate } from "react-router-dom"
 
 
-const AddPost = () => {
+const UpdateForm = (props) => {
 
+    
 
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-    const [hashtags, setHashTags] = useState("")
+    const [title, setTitle] = useState(props.title)
+    const [description, setDescription] = useState(props.description)
+    const [hashtags, setHashTags] = useState()
+
+    const oldhashtags = props.hashtags
+    const oldImage = props.image
+    
+    oldhashtags.map((Item)=>{
+        console.log(Item)
+    })
+
     const nav = useNavigate()
-
+    
     // ==== FETCH API ====
     const [selectedImage, setSelectedImage] = useState(null);
     const [imageUrl, setImageUrl] = useState(null);
+    
+
 
     useEffect(() => {
         if (selectedImage) {
@@ -26,36 +37,23 @@ const AddPost = () => {
     const dict = {
         "title": title,
         "description": description,
-        "tags": hashtags !== "" ? hashtags.split(",") : [],
+        // "tags": hashtags !== "" ? hashtags.split(",") : [],
         "image": selectedImage,
     }
-
-    const onClickAddPost = (event) => {
+    
+    const onClickAddPost =  (event) => {
         event.preventDefault()
-
-        const addPost = async () => {
-            try {
-
+        
+        const addPost = async()=>{
+            try{
                 console.info(dict.image)
-                let formData = new FormData();
-     
-                formData.append("title", title);
-                formData.append("description", description);
-                for (const tag in hashtags){
-                    formData.append("tags", tag);
-                }
-                formData.getAll("tags")
-
-                formData.append("image", selectedImage);
-                const res = await authMediaApi().post(endpoints['add-post'], formData);
-                alert("Tạo bài viết thành công");
-                nav(`/posts/${res.data.id}/`);
-            } catch (err) {
+                const res = await authApi().patch(endpoints['postDetail'],dict)
+                nav(`/posts/${res.data.id}/`)
+            }catch(err){
                 console.error(err)
             }
         }
-        if(selectedImage)
-            addPost()
+        addPost()
         console.info(dict)
 
     }
@@ -68,9 +66,8 @@ const AddPost = () => {
 
             <Container style={{ "margin": "auto" }}>
 
-                <h1 className="text-center" style={{ "padding": "10px", "color": "rgb(237, 83, 56)" }}>Thêm bài viết mới</h1>
                 <form style={{ "width": "50%", "display": "flex", "margin": "auto", "flexDirection": "column" }}
-                    onSubmit={(e) => onClickAddPost(e)}
+                    onSubmit={(e)=>onClickAddPost(e)}
                 >
                     <TextField
                         required
@@ -88,6 +85,7 @@ const AddPost = () => {
                         style={{ "margin": "10px", "backgroundColor": "rgb(255, 255, 255, 0.7)" }}
                     />
                     <TextField
+                        required
                         id="outlined-required"
                         label="Nhập hastags"
                         placeholder="hashtag1,hashtag2"
@@ -111,16 +109,21 @@ const AddPost = () => {
                                 <img src={imageUrl} alt={selectedImage.name} height="250px" />
                             </Box>
                         )}
+                        {oldImage !== null && selectedImage === null && (
+                            <Box mt={2} textAlign="center" >
+                                <img src={oldImage} alt={props.title} height="250px" />
+                            </Box>
+                        )}
                     </Form.Group>
-
+                    
                     <span style={{ "width": "300px", "margin": "10px" }}>
                         <Button variant="contained" color="success" type="submit">Xác nhận</Button>
                     </span>
 
                 </form>
-
+                
             </Container>
         </div >
     )
 }
-export default AddPost
+export default UpdateForm

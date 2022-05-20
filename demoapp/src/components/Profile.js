@@ -14,6 +14,7 @@ import { authApi, endpoints } from "../configs/APIs";
 import CircularProgress from '@mui/material/CircularProgress'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import Cancel from "@mui/icons-material/Cancel";
+import { useConfirm } from 'material-ui-confirm';
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -57,17 +58,18 @@ function a11yProps(index) {
 }
 
 
+
 const Profile = () => {
 
 
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+    // const [anchorEl, setAnchorEl] = useState(null);
+    // const open = Boolean(anchorEl);
+    // const handleClick = (event) => {
+    //     setAnchorEl(event.currentTarget);
+    // };
+    // const handleClose = () => {
+    //     setAnchorEl(null);
+    // };
     const [value, setValue] = useState(0);
 
     const handleChange = (event, newValue) => {
@@ -85,6 +87,11 @@ const Profile = () => {
 
     const [postsShared, setPostsShared] = useState([])
     const [isLoadingPostsShared, setIsLoadingPostsShared] = useState(true)
+
+    const [flag, setFlag] = useState(false)
+    const handleChangeFlag = () => {
+        setFlag(!flag)
+    }
 
     // ====== FETCH API ======
     useEffect(() => {
@@ -109,6 +116,7 @@ const Profile = () => {
                 if (user)
                     res = await authApi().get((endpoints['post-shared'](userID)));
                 setPostsShared(res.data);
+
                 setIsLoadingPostsShared(false);
                 console.info(res.data)
             } catch (err) {
@@ -118,7 +126,7 @@ const Profile = () => {
         }
         loadPostOwner();
         loadPostShared();
-    }, [])
+    }, [flag])
 
 
     if (user === null) {
@@ -141,35 +149,61 @@ const Profile = () => {
                 gender = "Bí mật"
         }
 
-    let menuItem = <Box>
-        <MenuItem onClick={handleClose} >
-            <DeleteForeverIcon style={{ "paddingRight": "5px" }} /> Xóa bài chia sẻ
-        </MenuItem>
+
+    // function menuItem(id, postID) {
+    //     return (
+    //         <Menu id={id} open={open} anchorEl={anchorEl} onClose={handleClose}
+    //             MenuListProps={{
+    //                 'aria-labelledby': 'basic-button',
+    //             }}
+    //         >
+    //             <Box>
+    //                 <MenuItem onClick={handleClose} >
+    //                     <DeleteForeverIcon style={{ "paddingRight": "5px" }} /> Xóa bài chia sẻ
+    //                 </MenuItem>
 
 
-        <MenuItem  >
-            <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
-        </MenuItem>
+    //                 <MenuItem id={postID}>
+    //                     <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
+    //                 </MenuItem>
 
 
-        <MenuItem onClick={handleClose} >
-            <Cancel style={{ "paddingRight": "5px" }} /> Hủy
-        </MenuItem>
-    </Box>
+    //                 <MenuItem onClick={handleClose} >
+    //                     <Cancel style={{ "paddingRight": "5px" }} /> Hủy
+    //                 </MenuItem>
+    //             </Box>
+    //         </Menu>
+    //     )
+    // }
+    // let menuItem = <Box>
+    //     <MenuItem onClick={handleClose} >
+    //         <DeleteForeverIcon style={{ "paddingRight": "5px" }} /> Xóa bài chia sẻ
+    //     </MenuItem>
+
+
+    //     <MenuItem  >
+    //         <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
+    //     </MenuItem>
+
+
+    //     <MenuItem onClick={handleClose} >
+    //         <Cancel style={{ "paddingRight": "5px" }} /> Hủy
+    //     </MenuItem>
+    // </Box>
 
     return (
         <>
-            <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
+            {/* Background-render  */}
+            {/* <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
                 MenuListProps={{
                     'aria-labelledby': 'basic-button',
                 }}
             >
                 {menuItem}
-            </Menu>
+            </Menu> */}
             <div style={{ "width": "100%", "backgroundColor": "#f3f3f3" }}>
                 <Container style={{ "padding": "20px" }}>
                     <Stack spacing={2}>
-
                         <br />
                         <Item>
                             <Grid container spacing={3}>
@@ -264,35 +298,44 @@ const Profile = () => {
                                     ) : (
                                         <ImageList sx={{ width: 900 }} cols={3} rowHeight={280} style={{ "margin": "0 auto" }}>
                                             {postsShared.map((item) => (
-                                                <>
-                                                    <ImageListItem key={item.post.image} style={{ "margin": "10px", "border": "solid 3px black", "overflow": "hidden" }}>
-                                                        <img
-                                                            src={`${item.post.image_path}?w=200&h=200&fit=crop&auto=format`}
-                                                            srcSet={`${item.post.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                                                            alt={item.post.title}
-                                                        />
+                                                // <>
+                                                //     <ImageListItem key={item.post.image} style={{ "margin": "10px", "border": "solid 3px black", "overflow": "hidden" }}>
+                                                //         <img
+                                                //             src={`${item.post.image_path}?w=200&h=200&fit=crop&auto=format`}
+                                                //             srcSet={`${item.post.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                                                //             alt={item.post.title}
 
-                                                        <ImageListItemBar
-                                                            title={item.post.title}
-                                                            subtitle={`writen by: ${item.post.author.username}`}
-                                                            actionIcon={
-                                                                <IconButton
-                                                                    sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                                                                    aria-label={`info about ${item.post.title}`}
-                                                                    aria-controls={open ? 'basic-menu' : undefined}
-                                                                    aria-haspopup="true"
-                                                                    aria-expanded={open ? 'true' : undefined}
-                                                                    onClick={handleClick}
-                                                                >
-                                                                    <InfoIcon />
-                                                                </IconButton>
-                                                            }
-                                                        />
+                                                //         />
+                                                //         <ImageListItemBar
+                                                //             title={item.post.title}
+                                                //             subtitle={`writen by: ${item.post.author.username}`}
+                                                //             actionIcon={
+                                                //                 <IconButton
+                                                //                     sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                                                //                     aria-label={`info about ${item.post.title}`}
+                                                //                     aria-controls={open ? 'basic-menu' : undefined}
+                                                //                     aria-haspopup="true"
+                                                //                     aria-expanded={open ? 'true' : undefined}
+                                                //                     onClick={handleClick}
+                                                //                 >
+                                                //                     <InfoIcon />
 
+                                                //                 </IconButton>
 
-                                                    </ImageListItem>
-
-                                                </>
+                                                //             }
+                                                //         />
+                                                //     </ImageListItem>
+                                                // </>
+                                                <PostSharing 
+                                                    id={item.id}
+                                                    image={item.post.image}
+                                                    image_path={item.post.image_path}
+                                                    title={item.post.title}
+                                                    postID={item.post.id}
+                                                    authorName={item.post.author.username}
+                                                    
+                                                    deleteSuccess={handleChangeFlag}
+                                                />
                                             ))}
                                         </ImageList>
                                     )}
@@ -311,6 +354,108 @@ const Profile = () => {
 
 
         </>
+    )
+}
+
+export function PostSharing(props) {
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+
+    const confirm = useConfirm();
+     // === DELET SHARING POST ===
+     const onClickDeleteSharingPost = () => {
+        const deleteSharingPost = async () => {
+            try {
+                const res = await authApi().delete(
+                    endpoints["delete-sharing"](props.id)
+                );
+                console.log(res.data)
+                if (res.status === 204) {
+                    alert("xóa thành công");
+                    props.deleteSuccess();
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        confirm({
+            title: "Bạn có chắc chắn muốn xóa bài chia sẻ này không?",
+            description: "Bài chia sẻ này sẽ được xóa vĩnh viễn",
+            confirmationText: "Có",
+            cancellationText: "Không",
+        })
+            .then(() => deleteSharingPost())
+            .catch((err) => console.error(err));
+    }
+
+    let menuItem = <Box>
+        <MenuItem onClick={()=>{
+            handleClose();
+            onClickDeleteSharingPost();
+        }} >
+            <DeleteForeverIcon style={{ "paddingRight": "5px" }} /> Xóa bài chia sẻ
+        </MenuItem>
+
+        <Link to={`/posts/${props.postID}/`} style={{"textDecoration":"none" , "color":"#343a40"}}>
+            <MenuItem  >
+                <InfoIcon style={{ "paddingRight": "5px" }} /> Đi tới bài viết
+            </MenuItem>
+        </Link>
+       
+
+
+        <MenuItem onClick={handleClose} >
+            <Cancel style={{ "paddingRight": "5px" }} /> Hủy
+        </MenuItem>
+    </Box>
+
+    return (
+        <Box key={props.id}>
+            {/* Background-render  */}
+            <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose}
+                MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                }}
+            >
+                {menuItem}
+            </Menu>
+            <ImageListItem key={props.image} style={{ "margin": "10px", "border": "solid 3px black", "overflow": "hidden" }}>
+                <img
+                    src={`${props.image_path}?w=200&h=200&fit=crop&auto=format`}
+                    srcSet={`${props.image}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                    alt={props.title}
+
+                />
+                <ImageListItemBar
+                    title={props.title}
+                    subtitle={`writen by: ${props.authorName}`}
+                    actionIcon={
+                        <IconButton
+                            sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                            aria-label={`info about ${props.title}`}
+                            aria-controls={open ? 'basic-menu' : undefined}
+                            aria-haspopup="true"
+                            aria-expanded={open ? 'true' : undefined}
+                            onClick={handleClick}
+                        >
+                            <InfoIcon />
+
+                        </IconButton>
+
+                    }
+                />
+            </ImageListItem>
+        </Box>
+
     )
 }
 

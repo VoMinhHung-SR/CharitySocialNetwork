@@ -1,4 +1,5 @@
 from rest_framework.serializers import ModelSerializer
+
 from .models import (Post, Tag, Comment, User,
                      Auction, Sharing, Notification)
 from rest_framework import serializers
@@ -41,12 +42,6 @@ class TagSerializer(ModelSerializer):
         fields = ["id", "name"]
 
 
-class AuctionSerializer(ModelSerializer):
-    class Meta:
-        model = Auction
-        fields = ['id', 'price', 'user', 'post']
-
-
 class AuthorSerializer(ModelSerializer):
     avatar = serializers.SerializerMethodField(source='avatar')
 
@@ -60,6 +55,14 @@ class AuthorSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'avatar']
+
+
+class AuctionSerializer(ModelSerializer):
+    user = AuthorSerializer()
+
+    class Meta:
+        model = Auction
+        fields = ['id', 'price', 'user', 'post']
 
 
 class CommentSerializer(ModelSerializer):
@@ -94,7 +97,8 @@ class PostSerializer(ModelSerializer):
         fields = ["id", "title", "description", "image_path", "image",
                   "created_date", "updated_date", "author", "tags", "like"]
         extra_kwargs = {
-            'image': {'write_only': 'true'}
+            'image': {'write_only': 'true'},
+            "image_path": {'read_only': 'true'}
         }
 
 
@@ -136,9 +140,11 @@ class SharingSerializer(ModelSerializer):
 
 
 class NotificationSerializer(ModelSerializer):
+    post = PostSerializer()
+
     class Meta:
         model = Notification
-        fields = ['id', 'message', 'created_date']
+        fields = ['id', 'message', 'created_date', 'post']
 
 
 class FriendSuggestSerializer(ModelSerializer):
