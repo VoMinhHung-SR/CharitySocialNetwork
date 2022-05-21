@@ -5,6 +5,7 @@ import { userContext } from "../App"
 import APIs, { authApi, endpoints } from "../configs/APIs"
 import cookies from "react-cookies"
 import { Navigate } from "react-router-dom"
+import { Box, width } from "@mui/system"
 
 const Login = () => {
     const [username, setUserName] = useState()
@@ -56,7 +57,8 @@ const Login = () => {
 
 
     return (
-        <Container style={{ "padding": "20px" }}>
+        <Box style={{"width":"100%", "backgroundColor":"#f3f3f3"}}>
+            <Container style={{ "padding": "20px", "width":"50%"}}>
             <h1 className="text-center text-danger">Đăng Nhập</h1>
             <Form onSubmit={login} >
                 <Form.Group className="mb-3" controlId="formBasicEmail">
@@ -77,6 +79,8 @@ const Login = () => {
 
             </Form>
         </Container>
+        </Box>
+        
     )
 }
 

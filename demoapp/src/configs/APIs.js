@@ -12,7 +12,7 @@ export let endpoints = {
     'like-post': (postID)=> `/posts/${postID}/like/`,
     'add-comment':(postID) => `/posts/${postID}/add-comment/`,
     'add-auction': (postID) =>`/posts/${postID}/add-auction/`,
-
+    'add-tags': (postID) => `/posts/${postID}/tags/`,
     
     'comment': (commentID) => `/comments/${commentID}/`,
     

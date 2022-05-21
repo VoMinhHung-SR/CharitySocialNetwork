@@ -37,6 +37,7 @@ import { Box } from '@mui/system';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from "yup";
+import AddTags from './AddTagsPost';
 
 
 const ExpandMore = styled((props) => {
@@ -62,6 +63,9 @@ const validationSchema = Yup.object().shape({
 const PostDetail = () => {
     //  === Popup Dialog ===
     const [openPopup, setOpenPopup] = useState(false)
+
+    const [menuItemOnClick, setMenuItemOnClick] = useState(0)
+    const [menuItemTitle, setMenuItemTitle] = useState('')
     // === Validation ===
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema),
@@ -332,8 +336,18 @@ const PostDetail = () => {
                     <MenuItem onClick={()=>{
                         handleClose();
                         setOpenPopup(true);
+                        setMenuItemOnClick(1);
+                        setMenuItemTitle("Chỉnh sửa bài viết")
                     }}>
                         <EditIcon style={{ "paddingRight": "5px" }} /> Chỉnh sửa bài viết
+                    </MenuItem>
+                    <MenuItem onClick={()=>{
+                        handleClose();
+                        setOpenPopup(true);
+                        setMenuItemOnClick(2);
+                        setMenuItemTitle(" Thêm Hashtags")
+                    }}>
+                        <EditIcon style={{ "paddingRight": "5px" }} /> Thêm hashtags
                     </MenuItem>
                     <MenuItem onClick={() => {
                         handleClose();
@@ -450,9 +464,14 @@ const PostDetail = () => {
             >
                 {menuItem}
             </Menu>
-            <PopupDialog openPopup={openPopup} setOpenPopup={setOpenPopup} title="Chỉnh sửa bài viết">
-                <UpdateForm title={post.title} description={post.description} 
-                image={post.image_path} hashtags={post.tags}/>
+            <PopupDialog openPopup={openPopup} setOpenPopup={setOpenPopup} title={menuItemTitle}>
+                {menuItemOnClick && menuItemOnClick === 1 ? (
+                    <UpdateForm title={post.title} description={post.description} 
+                    image={post.image_path} hashtags={post.tags}/>
+                ): menuItemOnClick && menuItemOnClick === 2?(
+                    <AddTags postID={postID} afterAddTags={handleChangeFlag}/>
+                ) : ""} 
+                
             </PopupDialog>
 
             {/* Main */}

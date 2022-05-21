@@ -52,7 +52,8 @@ const LoadPostCard = () => {
                 console.log(data.results);
                 setPagination({
                     count: data.count,
-                    sizeNumber: Math.ceil(data.count / 2),
+                    // data show number: x = 30
+                    sizeNumber: Math.ceil(data.count / 30),
                 });
                 setIsLoadingPosts(false);
                 // console.log("load thành công")

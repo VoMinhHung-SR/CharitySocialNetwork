@@ -2,7 +2,6 @@ import { Container, Button, Box, TextField, Input } from "@mui/material"
 import { useState, useEffect } from "react";
 import { Form } from "react-bootstrap";
 import { authApi, endpoints } from "../../configs/APIs";
-import { useNavigate } from "react-router-dom"
 
 
 const UpdateForm = (props) => {
@@ -16,11 +15,8 @@ const UpdateForm = (props) => {
     const oldhashtags = props.hashtags
     const oldImage = props.image
     
-    oldhashtags.map((Item)=>{
-        console.log(Item)
-    })
+    oldhashtags.map((Item)=>(console.log(Item)))
 
-    const nav = useNavigate()
     
     // ==== FETCH API ====
     const [selectedImage, setSelectedImage] = useState(null);
@@ -48,7 +44,7 @@ const UpdateForm = (props) => {
             try{
                 console.info(dict.image)
                 const res = await authApi().patch(endpoints['postDetail'],dict)
-                nav(`/posts/${res.data.id}/`)
+                console.log(res.data)
             }catch(err){
                 console.error(err)
             }

@@ -29,7 +29,7 @@ export default function PopupDialog(props) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="error">Cancel</Button>
-                    <Button onClick={handleClose} color="success">submit</Button>
+                    {/* <Button onClick={handleClose} color="success">submit</Button> */}
                 </DialogActions>
             </Dialog>
         </>
